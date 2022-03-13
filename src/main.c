@@ -6,6 +6,8 @@
 #include <GL/glew.h>
 #include <GL/glx.h>
 
+#include "shader.h"
+
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
 const char *vertex_shader_source = 
@@ -65,6 +67,8 @@ int main() {
         if(vi) {
             int sample_buffers, samples;
 
+            // TODO: add double buffer check
+
             glXGetFBConfigAttrib(display, fbc[i], GLX_SAMPLE_BUFFERS, &sample_buffers);
             glXGetFBConfigAttrib(display, fbc[i], GLX_SAMPLES, &samples);
 
@@ -114,6 +118,8 @@ int main() {
         exit(1);
     }
 
+    XStoreName(display, window, "MineTest - X11 OpenGL 4.x");
+
     XMapWindow(display, window);
 
     // free visual info
@@ -152,6 +158,8 @@ int main() {
     glewExperimental = GL_TRUE;
     glewInit();
 
+    make_shader("data/shaders/main");
+
     float vertices[] = {
         -0.5f, -0.5f, 0.0f,
         0.5f, -0.5f, 0.0f,
@@ -174,18 +182,11 @@ int main() {
 
     glBindVertexArray(0);
 
-    unsigned int vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
-    glCompileShader(vertex_shader);
-
-    unsigned int fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
-    glCompileShader(fragment_shader);
-
-    unsigned int shader_program = glCreateProgram();
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-    glLinkProgram(shader_program);
+    shader_t *shader = make_shader("data/shaders/main");
+    if(!shader) {
+        fprintf(stderr, "Error making shader main\n");
+        return 1;
+    }
 
     // event loop
     XEvent event;
@@ -204,15 +205,14 @@ int main() {
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shader_program);
+        glUseProgram(shader->program);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glXSwapBuffers(display, window);
     }
 
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
+    close_shader(shader);
 
     glXMakeCurrent(display, 0, 0);
     glXDestroyContext(display, context);

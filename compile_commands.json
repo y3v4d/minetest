@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/y3v4d/Programming/minetest/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/Programming/minetest/include  -o CMakeFiles/minetest.dir/src/main.c.o -c /home/y3v4d/Programming/minetest/src/main.c",
+  "file": "/home/y3v4d/Programming/minetest/src/main.c"
+}
+]
