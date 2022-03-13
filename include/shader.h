@@ -2,10 +2,10 @@
 #define __SHADER_H__
 
 typedef struct {
-    int vertex;
-    int fragment;
+    unsigned vertex;
+    unsigned fragment;
 
-    int program;   
+    unsigned program;   
 } shader_t;
 
 shader_t* make_shader(const char *path);

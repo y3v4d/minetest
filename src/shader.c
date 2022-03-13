@@ -40,9 +40,6 @@ char* load_file(const char *path) {
 
 shader_t* make_shader(const char *path) {
     shader_t *shader = (shader_t*)malloc(sizeof(shader_t));
-    shader->vertex = -1;
-    shader->fragment = -1;
-    shader->program = -1;
 
     int path_size = strlen(path);
     char *real_path = (char*)malloc(sizeof(char) * (path_size + 12));
@@ -57,8 +54,6 @@ shader_t* make_shader(const char *path) {
 
         return NULL;
     }
-
-    printf("Vertex: %s\n", buffer);
 
     shader->vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(shader->vertex, 1, (const char**)&buffer, NULL);
@@ -75,8 +70,6 @@ shader_t* make_shader(const char *path) {
 
         return NULL;
     }
-
-    printf("Fragment: %s\n", buffer);
 
     shader->fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(shader->fragment, 1, (const char**)&buffer, NULL);
@@ -97,9 +90,9 @@ shader_t* make_shader(const char *path) {
 void close_shader(shader_t *shader) {
     if(shader == NULL) return;
 
-    if(shader->vertex != -1) glDeleteShader(shader->vertex);
-    if(shader->fragment != -1) glDeleteShader(shader->fragment);
-    if(shader->program != -1) glDeleteProgram(shader->program);
+    glDeleteShader(shader->vertex);
+    glDeleteShader(shader->fragment);
+    glDeleteProgram(shader->program);
 
     free(shader);
 }

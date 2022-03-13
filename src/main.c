@@ -1,8 +1,10 @@
+#include <X11/X.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
+#include <X11/keysym.h>
 #include <GL/glew.h>
 #include <GL/glx.h>
 
@@ -100,6 +102,7 @@ int main() {
     window_attributes.colormap = XCreateColormap(display, XRootWindow(display, vi->screen), vi->visual, AllocNone);
     window_attributes.background_pixel = XWhitePixel(display, vi->screen);
     window_attributes.border_pixel = XBlackPixel(display, vi->screen);
+    window_attributes.event_mask = KeyPressMask;
 
     Window window = XCreateWindow(
             display,                        // display
@@ -110,7 +113,7 @@ int main() {
             vi->depth,                      // depth
             InputOutput,                    // window flags
             vi->visual,                     // visual
-            CWBackPixel | CWBorderPixel | CWColormap,    // attributes flags
+            CWBackPixel | CWBorderPixel | CWColormap | CWEventMask,    // attributes flags
             &window_attributes              // window attributes
     );
     if(!window) {
@@ -194,7 +197,17 @@ int main() {
     while(!done) {
         while(XPending(display)) {
             XNextEvent(display, &event);
-            if(event.type == ClientMessage) {
+
+            if(event.type == KeyPress) {
+                KeySym key = XLookupKeysym(&event.xkey, 0);
+                
+                if(key == (long)'q') {
+                    done = True;
+                } else if(key == (long)'r') {
+                    close_shader(shader);
+                    shader = make_shader("data/shaders/main");
+                }
+            } else if(event.type == ClientMessage) {
                 if(event.xclient.data.l[0] == (long)wm_delete_window) {
                     printf("WM_DELETE_WINDOW invoked\n");
                     done = True;      
