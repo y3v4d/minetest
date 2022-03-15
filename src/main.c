@@ -12,21 +12,6 @@
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-const char *vertex_shader_source = 
-"#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"void main() {\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"}";
-
-const char *fragment_shader_source = 
-"#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main() {\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-"}";
-
-
 int main() {
     Atom wm_delete_window;
 
@@ -68,8 +53,6 @@ int main() {
         XVisualInfo *vi = glXGetVisualFromFBConfig(display, fbc[i]);
         if(vi) {
             int sample_buffers, samples;
-
-            // TODO: add double buffer check
 
             glXGetFBConfigAttrib(display, fbc[i], GLX_SAMPLE_BUFFERS, &sample_buffers);
             glXGetFBConfigAttrib(display, fbc[i], GLX_SAMPLES, &samples);
@@ -149,7 +132,6 @@ int main() {
         };
 
         context = glXCreateContextAttribsARB(display, best_fb, 0, True, context_attribs);
-        XSync(display, False);
         if(!context) {
             printf("Can't create modern OpenGL context\n");
             exit(1);
