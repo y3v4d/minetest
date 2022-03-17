@@ -1,6 +1,8 @@
 #include "system.h"
 #include "constants.h"
 
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,6 +24,8 @@ XEvent x_event;
 
 // atoms
 Atom wm_delete_window;
+
+Bool x_expose_occurred = False;
 
 void g_init() {
     // open new display connection
@@ -96,9 +100,9 @@ void g_init() {
     // set window attributes
     XSetWindowAttributes window_attributes;
     window_attributes.colormap = XCreateColormap(display, XRootWindow(display, vi->screen), vi->visual, AllocNone);
-    window_attributes.background_pixel = XWhitePixel(display, vi->screen);
+    window_attributes.background_pixel = XBlackPixel(display, vi->screen);
     window_attributes.border_pixel = XBlackPixel(display, vi->screen);
-    window_attributes.event_mask = KeyPressMask;
+    window_attributes.event_mask = KeyPressMask | StructureNotifyMask;
 
     // create window
     window = XCreateWindow(
@@ -120,14 +124,23 @@ void g_init() {
 
     XStoreName(display, window, "MineTest - X11 OpenGL 4.x");
 
-    XMapWindow(display, window);
-
     // free visual info
     XFree(vi);
 
     // setup WM_DELETE_WINDOW atom
     wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
     XSetWMProtocols(display, window, &wm_delete_window, 1);
+
+    // setup WM_CLASS
+    XClassHint *class_hint = XAllocClassHint();
+
+    class_hint->res_name = "Minetest";
+    class_hint->res_class = "minetest";
+
+    XSetClassHint(display, window, class_hint);
+
+    // show window
+    XMapWindow(display, window);
 
     // get ARB function to create modern opengl context in x11
     glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
@@ -182,7 +195,9 @@ void g_get_event(event_t *event) {
     if(x_event.type == KeyPress) {
         event->type = EVENT_KEY_PRESS;
         event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
-    } else if(x_event.type == ClientMessage) {
+    } else if(x_event.type == ConfigureNotify) {
+        glViewport(0, 0, x_event.xconfigure.width, x_event.xconfigure.height);
+    }  else if(x_event.type == ClientMessage) {
         if(x_event.xclient.data.l[0] == (long)wm_delete_window) {
             event->type = EVENT_WINDOW_CLOSE;
         }
