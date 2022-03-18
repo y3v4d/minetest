@@ -66,6 +66,7 @@ shader_t* make_shader(const char *path) {
 
     // load vertex shader
     strncpy(real_path + path_size, ".vert", 5);
+    real_path[path_size + 5] = 0;
     char *buffer = load_file(real_path);
     if(!buffer) {
         close_shader(shader);

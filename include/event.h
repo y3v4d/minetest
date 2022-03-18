@@ -3,7 +3,8 @@
 
 #define EVENT_UNDEFINED     0x00
 #define EVENT_KEY_PRESS     0x01
-#define EVENT_WINDOW_CLOSE  0x02
+#define EVENT_KEY_RELEASE   0x02
+#define EVENT_WINDOW_CLOSE  0x03
 
 typedef struct _event_key_s {
     unsigned type;

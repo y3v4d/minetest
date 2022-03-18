@@ -102,7 +102,7 @@ void g_init() {
     window_attributes.colormap = XCreateColormap(display, XRootWindow(display, vi->screen), vi->visual, AllocNone);
     window_attributes.background_pixel = XBlackPixel(display, vi->screen);
     window_attributes.border_pixel = XBlackPixel(display, vi->screen);
-    window_attributes.event_mask = KeyPressMask | StructureNotifyMask;
+    window_attributes.event_mask = KeyPressMask | KeyReleaseMask | StructureNotifyMask;
 
     // create window
     window = XCreateWindow(
@@ -194,6 +194,9 @@ void g_get_event(event_t *event) {
 
     if(x_event.type == KeyPress) {
         event->type = EVENT_KEY_PRESS;
+        event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
+    } else if(x_event.type == KeyRelease) {
+        event->type = EVENT_KEY_RELEASE;
         event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
     } else if(x_event.type == ConfigureNotify) {
         glViewport(0, 0, x_event.xconfigure.width, x_event.xconfigure.height);
