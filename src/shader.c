@@ -38,6 +38,25 @@ char* load_file(const char *path) {
     return buffer;
 }
 
+GLint check_compilation(GLuint shader) {
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+
+    if(success == GL_FALSE) {
+        GLint length = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+
+        GLchar *log = (GLchar*)malloc(sizeof(GLchar) * length);
+        glGetShaderInfoLog(shader, length, &length, log);
+
+        printf("Error compiling shader:\n%s\n", log);
+
+        free(log);
+    }
+
+    return success;
+}
+
 shader_t* make_shader(const char *path) {
     shader_t *shader = (shader_t*)malloc(sizeof(shader_t));
 
@@ -61,6 +80,13 @@ shader_t* make_shader(const char *path) {
 
     free(buffer);
 
+    if(!check_compilation(shader->vertex)) {
+        free(real_path);
+        close_shader(shader);
+
+        return NULL;
+    }
+
     // load fragment shader
     strncpy(real_path + path_size, ".frag", 5);
     buffer = load_file(real_path);
@@ -77,6 +103,12 @@ shader_t* make_shader(const char *path) {
 
     free(buffer);
     free(real_path);
+
+    if(!check_compilation(shader->fragment)) {
+        close_shader(shader);
+
+        return NULL;
+    }
 
     // link shader program
     shader->program = glCreateProgram();

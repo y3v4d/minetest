@@ -1,9 +1,9 @@
-.PHONY: cmake build run
+.PHONY: cmake compile run
 
 cmake:
 	cmake -B build
 
-build:
+compile:
 	make -C build
 
 run:
