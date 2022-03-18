@@ -208,6 +208,15 @@ int main() {
     float v_ay = 0.0f;
     float v_az = 0.0f;
 
+    float m_x = 0.0f;
+    float m_y = 0.0f;
+
+    float pm_x = -1.0f;
+    float pm_y = -1.0f;
+
+    float dm_x = 0.0f;
+    float dm_y = 0.0f;
+
     int layer = 0;
 
     // event loop
@@ -216,6 +225,8 @@ int main() {
     while(!done) {
         while(g_pending_events()) {
             g_get_event(&event);
+
+            dm_x = 0.0f;
 
             if(event.type == EVENT_KEY_PRESS) {
                 char key = event.eventkey.key;
@@ -233,6 +244,7 @@ int main() {
                     case 'd': v_ay = -ROTATION_SPEED; break;
                     case 't': v_y = -SPEED; break;
                     case 'g': v_y = SPEED; break;
+                    break;
                     default: break;
                 }
 
@@ -248,17 +260,30 @@ int main() {
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
                 done = 1;
+            } else if(event.type == EVENT_MOUSE_MOVE) {
+                m_x = event.eventmouse.x;
+                m_y = event.eventmouse.y;
             }
         }
+
+        dm_x = m_x - pm_x;
+        dm_y = m_y - pm_y;
+
+        angle_y += (dm_x) / 10000.0f;
+        angle_z += (-dm_y) / 10000.0f;
+
+        g_lock_mouse();
+        pm_x = 320; pm_y = 240;
+        m_x = 320; m_y = 240;
 
         model[3] += v_x;
         model[7] += v_y;
         model[11] += v_z;
 
-        angle_y += v_ay;
-        angle_z += v_az;
+        //angle_y += v_ay;
+        //angle_z += v_az;
 
-        set_rotation_y(-angle_y, rotation_y);
+        set_rotation_y(angle_y, rotation_y);
         set_rotation_x(-angle_z, rotation_z);
 
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);

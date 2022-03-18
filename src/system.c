@@ -102,7 +102,7 @@ void g_init() {
     window_attributes.colormap = XCreateColormap(display, XRootWindow(display, vi->screen), vi->visual, AllocNone);
     window_attributes.background_pixel = XBlackPixel(display, vi->screen);
     window_attributes.border_pixel = XBlackPixel(display, vi->screen);
-    window_attributes.event_mask = KeyPressMask | KeyReleaseMask | StructureNotifyMask;
+    window_attributes.event_mask = KeyPressMask | KeyReleaseMask | PointerMotionMask | StructureNotifyMask;
 
     // create window
     window = XCreateWindow(
@@ -173,6 +173,12 @@ void g_init() {
     glewInit();
 }
 
+Bool mouse_warped = False;
+void g_lock_mouse() {
+    XWarpPointer(display, None, window, 0, 0, 0, 0, 320, 240);
+    mouse_warped = True;
+}
+
 void g_swap_buffers() {
     glXSwapBuffers(display, window);
 }
@@ -192,19 +198,34 @@ int g_pending_events() {
 void g_get_event(event_t *event) {
     XNextEvent(display, &x_event);
 
-    if(x_event.type == KeyPress) {
-        event->type = EVENT_KEY_PRESS;
-        event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
-    } else if(x_event.type == KeyRelease) {
-        event->type = EVENT_KEY_RELEASE;
-        event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
-    } else if(x_event.type == ConfigureNotify) {
-        glViewport(0, 0, x_event.xconfigure.width, x_event.xconfigure.height);
-    }  else if(x_event.type == ClientMessage) {
-        if(x_event.xclient.data.l[0] == (long)wm_delete_window) {
-            event->type = EVENT_WINDOW_CLOSE;
-        }
-    } else {
-        event->type = EVENT_UNDEFINED;
+    switch(x_event.type) {
+        case KeyPress:
+            event->type = EVENT_KEY_PRESS;
+            event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
+            break;
+        case KeyRelease:
+            event->type = EVENT_KEY_RELEASE;
+            event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
+            break;
+        case MotionNotify:
+            if(mouse_warped == True) { 
+                event->type = EVENT_UNDEFINED;
+                mouse_warped = False; 
+            } else {
+                event->type = EVENT_MOUSE_MOVE;
+                event->eventmouse.x = x_event.xmotion.x;
+                event->eventmouse.y = x_event.xmotion.y;
+            }
+    
+            break;
+        case ConfigureNotify:
+            glViewport(0, 0, x_event.xconfigure.width, x_event.xconfigure.height);
+            break;
+        case ClientMessage:
+            if(x_event.xclient.data.l[0] == (long)wm_delete_window) {
+                event->type = EVENT_WINDOW_CLOSE;
+            }
+            break;
+        default: event->type = EVENT_UNDEFINED; break;
     }
 }
