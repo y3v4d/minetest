@@ -15,35 +15,55 @@
 #include <math.h>
 
 void GLAPIENTRY
-MessageCallback( GLenum source,
-                         GLenum type,
-                                          GLuint id,
-                                                           GLenum severity,
-                                                                            GLsizei length,
-                                                                                             const GLchar* message,
-                                                                                                              const void* userParam )
+MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
-      fprintf( stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-                         ( type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "" ),
-                                     type, severity, message );
+    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message );
 }
 
 int main() {
     g_init();
 
     float vertices[] = {
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f
+        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,      // 0 left top front
+        1.0f, 1.0f, 0.0f, 1.0f, 1.0f,       // 1 right top front
+        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,      // 2 right bottom front
+        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,     // 3 left bottom front
+
+        1.0f, 1.0f, -1.0f, 0.0f, 1.0f,      // 4 right top back
+        -1.0f, 1.0f, -1.0f, 1.0f, 1.0f,     // 5 left top back
+        -1.0f, -1.0f, -1.0f, 1.0f, 0.0f,    // 6 left bottom back
+        1.0f, -1.0f, -1.0f, 0.0f, 0.0f      // 7 right bottom back
     };
 
     unsigned int indices[] = {
+        // front
         0, 1, 2,
-        2, 3, 0
+        2, 3, 0,
+
+        // back
+        4, 5, 6,
+        6, 7, 4,
+        
+        // right
+        1, 4, 7,
+        7, 2, 1,
+
+        // left
+        5, 0, 3,
+        3, 6, 5,
+
+        // top
+        5, 4, 1,
+        1, 0, 5,
+
+        // bottom
+        3, 2, 7,
+        7, 6, 3
     };
 
     glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEPTH_TEST);
     glDebugMessageCallback(MessageCallback, 0);
 
     const GLubyte *version = glGetString(GL_VERSION);
@@ -74,41 +94,18 @@ int main() {
         return 1;
     }
 
+    // load texture atlas
     bmp_t *img = load_bmp("data/textures/atlas.bmp");
     if(!img) {
         fprintf(stderr, "Couldn't load texture!\n");
         return 1;
     }
 
-    byte_t data[2 * 3] = {
-        255.f, 0.f, 0.f,
-        255.f, 0.f, 0.f
-    };
-
     unsigned int texture;
-
-    /*GLsizei width = 1;
-    GLsizei height = 1;
-    GLsizei layerCount = 1;
-    GLsizei mipLevelCount = 1;
-
-    GLubyte texels[32] = {
-        // Texels for first image.
-        0,   0,   255,   255,
-        255, 0,   0,   255,
-        0,   255, 0,   255,
-        0,   0,   255, 255,
-        // Texels for second image.
-        255, 255, 255, 255,
-        255, 255,   0, 255,
-        0,   255, 255, 255,
-        255, 0,   255, 255,
-    };*/
-
     const unsigned TILE_W = 16, TILE_H = 16;
 
-    glGenTextures(1,&texture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY,texture);
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -129,27 +126,9 @@ int main() {
         }
     }
 
-    //glTexStorage3D(GL_TEXTURE_2D_ARRAY, mipLevelCount, GL_RGBA8, width, height, layerCount);
-    //glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, width, height, layerCount, GL_RGBA, GL_UNSIGNED_BYTE, texels);
-
-    /*glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, 1, 1, 2);
-    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 1, 1, 2, GL_RGB, GL_UNSIGNED_BYTE, data);*/
-    /*glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, img->width, img->height);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img->width, img->height, GL_BGR, GL_UNSIGNED_BYTE, img->data);*/
-
     free_bmp(img);
 
+    // setup perspective projection
     float near = 0.1f, far = 100.0f;
 
     const float FOV = 60.0f;
@@ -161,7 +140,7 @@ int main() {
     float right = top * aspect_ratio;
     float left = -right;
 
-    float matrix[16] = {
+    float projection[16] = {
         (2.0f * near) / (right - left), 0.0f, (right + left) / (right - left), 0.0f,
         0.0f, (2.0f * near) / (top - bottom), (top + bottom) / (top - bottom), 0.0f,
         0.0f, 0.0f, -(far + near) / (far - near), -(2.0f * far * near) / (far - near),
@@ -177,10 +156,14 @@ int main() {
 
     GLint matrix_location = glGetUniformLocation(shader->program, "matrix");
     GLint model_location = glGetUniformLocation(shader->program, "model");
+    GLint layer_location = glGetUniformLocation(shader->program, "layer");
 
     const float SPEED = 0.1f;
     float v_x = 0.0f;
+    float v_y = 0.0f;
     float v_z = 0.0f;
+
+    int layer = 0;
 
     // event loop
     event_t event;
@@ -192,25 +175,31 @@ int main() {
             if(event.type == EVENT_KEY_PRESS) {
                 char key = event.eventkey.key;
 
-                if(key == 'q') {
-                    done = 1;
-                } else if(key == 'r') {
-                    close_shader(shader);
-                    shader = make_shader("data/shaders/main");
-                } else if(key == 's') {
-                    v_z = -SPEED;
-                } else if(key == 'w') {
-                    v_z = SPEED;
-                } else if(key == 'a') {
-                    v_x = SPEED;
-                } else if(key == 'd') {
-                    v_x = -SPEED;
+                switch(key) {
+                    case 'q': done = 1; break;
+                    case 'r':
+                        close_shader(shader);
+                        shader = make_shader("data/shaders/main");
+
+                        break;
+                    case 's': v_z = -SPEED; break;
+                    case 'w': v_z = SPEED; break;
+                    case 'a': v_x = SPEED; break;
+                    case 'd': v_x = -SPEED; break;
+                    case 't': v_y = -SPEED; break;
+                    case 'g': v_y = SPEED; break;
+                    default: break;
+                }
+
+                if(key >= '1' && key <= '4') {
+                    layer = key - '0' - 1;
                 }
             } else if(event.type == EVENT_KEY_RELEASE) {
                 char key = event.eventkey.key;
 
                 if(key == 's' || key == 'w') v_z = 0;
                 else if(key == 'a' || key == 'd') v_x = 0;
+                else if(key == 't' || key == 'g') v_y = 0;
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
                 done = 1;
@@ -218,15 +207,17 @@ int main() {
         }
 
         model[3] += v_x;
+        model[7] += v_y;
         model[11] += v_z;
 
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shader->program);
 
-        glUniformMatrix4fv(matrix_location, 1, GL_TRUE, matrix);
+        glUniformMatrix4fv(matrix_location, 1, GL_TRUE, projection);
         glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
+        glUniform1i(layer_location, layer);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
