@@ -133,7 +133,7 @@ int main() {
 
     const float FOV = 60.0f;
     const float PI = 3.14159265359f;
-    float top = tanf(FOV / 2.0f * (180.0f / PI)) * near;
+    float top = tanf(FOV / 2.0f * (PI / 180.0f)) * near;
     float bottom = -top;
 
     float aspect_ratio = 640.f / 480.f;
