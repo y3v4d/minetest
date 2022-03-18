@@ -7,9 +7,10 @@ out vec2 texCord;
 
 uniform mat4 matrix;
 uniform mat4 model;
-uniform mat4 rotation;
+uniform mat4 rotation_y;
+uniform mat4 rotation_z;
 
 void main() {
     texCord = aTexCord;
-    gl_Position = matrix * model * rotation * vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = matrix * rotation_z * rotation_y * model * vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }
