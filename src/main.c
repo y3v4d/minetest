@@ -14,11 +14,21 @@
 
 #include <math.h>
 
+#define PI 3.14159265359
+#define RADIANS(a) (a) * (180 / PI)
+
 void GLAPIENTRY
 MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
         (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message );
+}
+
+void set_rotation_m(float angle, float m[]) {
+    m[0] = cosf(RADIANS(angle));
+    m[1] = -sinf(RADIANS(angle));
+    m[4] = sinf(RADIANS(angle));
+    m[5] =  cosf(RADIANS(angle));
 }
 
 int main() {
@@ -132,8 +142,7 @@ int main() {
     float near = 0.1f, far = 100.0f;
 
     const float FOV = 60.0f;
-    const float PI = 3.14159265359f;
-    float top = tanf(FOV / 2.0f * (PI / 180.0f)) * near;
+    float top = tanf(RADIANS(FOV / 2.0f)) * near;
     float bottom = -top;
 
     float aspect_ratio = 640.f / 480.f;
@@ -154,14 +163,26 @@ int main() {
         0.0f, 0.0f, 0.0f, 1.0f
     };
 
+    float rotation[16] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+
     GLint matrix_location = glGetUniformLocation(shader->program, "matrix");
     GLint model_location = glGetUniformLocation(shader->program, "model");
     GLint layer_location = glGetUniformLocation(shader->program, "layer");
+    GLint rotation_location = glGetUniformLocation(shader->program, "rotation");
 
     const float SPEED = 0.1f;
     float v_x = 0.0f;
     float v_y = 0.0f;
     float v_z = 0.0f;
+
+    float angle = 0.f;
+
+    printf("cosf: %f, sinf: %f\n", cosf(RADIANS(angle)), sinf(RADIANS(angle)));
 
     int layer = 0;
 
@@ -210,6 +231,10 @@ int main() {
         model[7] += v_y;
         model[11] += v_z;
 
+        angle += 0.0001f;
+
+        set_rotation_m(angle, rotation);
+
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -217,6 +242,7 @@ int main() {
 
         glUniformMatrix4fv(matrix_location, 1, GL_TRUE, projection);
         glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
+        glUniformMatrix4fv(rotation_location, 1, GL_TRUE, rotation);
         glUniform1i(layer_location, layer);
 
         glActiveTexture(GL_TEXTURE0);
