@@ -14,6 +14,9 @@
 
 #include <math.h>
 
+#include "math/vec.h"
+#include "math/matrix.h"
+
 #define PI 3.14159265359
 #define RADIANS(a) (a) * (180 / PI)
 
@@ -22,27 +25,6 @@ MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei 
 {
     fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
         (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message );
-}
-
-void set_rotation_z(float angle, float m[]) {
-    m[0] = cosf(RADIANS(angle));
-    m[1] = -sinf(RADIANS(angle));
-    m[4] = sinf(RADIANS(angle));
-    m[5] =  cosf(RADIANS(angle));
-}
-
-void set_rotation_y(float angle, float m[]) {
-    m[0] = cosf(RADIANS(angle));
-    m[2] = sinf(RADIANS(angle));
-    m[8] = -sinf(RADIANS(angle));
-    m[10] = cosf(RADIANS(angle));
-}
-
-void set_rotation_x(float angle, float m[]) {
-    m[5]  = cosf(RADIANS(angle));
-    m[6]  = -sinf(RADIANS(angle)); 
-    m[9]  = sinf(RADIANS(angle));
-    m[10] = cosf(RADIANS(angle));
 }
 
 const float CUBE_VERTEX[] = {
@@ -145,79 +127,18 @@ void make_mesh() {
     vertex_count  = 0;
     indices_count = 0;
 
-    for(int i = 0; i < 1; ++i) {
-        emit_face(0, 0, 0, 0);
-        emit_face(0, 0, 0, 1);
-        emit_face(0, 0, 0, 2);
-        emit_face(0, 0, 0, 3);
-        emit_face(0, 0, 0, 4);
-        emit_face(0, 0, 0, 5);
+    for(int i = 0; i < 4; ++i) {
+        emit_face(i, 0, 0, 0);
+        emit_face(i, 0, 0, 1);
+        emit_face(i, 0, 0, 2);
+        emit_face(i, 0, 0, 3);
+        emit_face(i, 0, 0, 4);
+        emit_face(i, 0, 0, 5);
     }
 }
 
-
-
 int main() {
     g_init();
-
-    float vertices[] = {
-        // front, right, back, left
-        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0,   // 0  left top front
-        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,  0,   // 1  right top front
-        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0,   // 2  right bottom front
-        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,0,   // 3  left bottom front
-
-        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0,   // 4  right top back
-        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,0,   // 5  left top back
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,0,  // 6  left bottom back
-        0.5f, -0.5f, -0.5f, 0.0f, 0.0f,0,   // 7  right bottom back
-
-        // top
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,1,   // 8  left top back
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1,   // 9  right top back
-        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,  1,   // 10 right top front
-        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1,   // 11 left top front
-
-        // bottom
-        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,2,   // 12 left bottom front
-        0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 2,   // 13 right bottom front
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,2,   // 14 right bottom back
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,2,  // 15 left bottom back
-    };
-
-    unsigned int indices[] = {
-        // front
-        0, 1, 2,
-        2, 3, 0,
-
-        // back
-        4, 5, 6,
-        6, 7, 4,
-        
-        // right
-        1, 4, 7,
-        7, 2, 1,
-
-        // left
-        5, 0, 3,
-        3, 6, 5,
-
-        // top
-        8, 9, 10,
-        10, 11, 8,
-
-        // bottom
-        12, 13, 14,
-        14, 15, 12
-    };
-
-    make_mesh();
-
-    for(int i = 0; i < mesh_index; ++i) {
-        printf("%f ", mesh[i]);
-
-        if((i + 1) % 6 == 0) printf("\n");
-    }
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEPTH_TEST);
@@ -225,6 +146,8 @@ int main() {
 
     const GLubyte *version = glGetString(GL_VERSION);
     printf("OpenGL version: %s\n", version);
+
+    make_mesh();
     
     unsigned int VBO, VAO, VEO;
     glGenBuffers(1, &VBO);
@@ -288,58 +211,13 @@ int main() {
 
     free_bmp(img);
 
-    // setup perspective projection
-    float near = 0.1f, far = 100.0f;
+    mat4_t model = mat4_identity();
+    mat4_t view = mat4_identity();
+    mat4_t projection = mat4_perspective(60.f, 640.f / 480.f, 0.1f, 10.f);
 
-    const float FOV = 60.0f;
-    float top = tanf(RADIANS(FOV / 2.0f)) * near;
-    float bottom = -top;
-
-    float aspect_ratio = 640.f / 480.f;
-    float right = top * aspect_ratio;
-    float left = -right;
-
-    float projection[16] = {
-        (2.0f * near) / (right - left), 0.0f, (right + left) / (right - left), 0.0f,
-        0.0f, (2.0f * near) / (top - bottom), (top + bottom) / (top - bottom), 0.0f,
-        0.0f, 0.0f, -(far + near) / (far - near), -(2.0f * far * near) / (far - near),
-        0.0f, 0.0f, -1.0f, 1.0f
-    };
-
-    float model[16] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    float view_pos[16] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    float rotation_y[16] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    float rotation_z[16] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    GLint matrix_location = glGetUniformLocation(shader->program, "matrix");
     GLint model_location = glGetUniformLocation(shader->program, "model");
-    GLint layer_location = glGetUniformLocation(shader->program, "layer");
-    GLint rotation_y_location = glGetUniformLocation(shader->program, "rotation_y");
-    GLint rotation_z_location = glGetUniformLocation(shader->program, "rotation_z");
-    GLint view_location = glGetUniformLocation(shader->program, "view_pos");
+    GLint view_location = glGetUniformLocation(shader->program, "view");
+    GLint projection_location = glGetUniformLocation(shader->program, "projection");
 
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
@@ -361,7 +239,7 @@ int main() {
     float dm_x = 0.0f;
     float dm_y = 0.0f;
 
-    int layer = 0;
+    vec3f cam_pos = { 0.f, 0.f, 0.f };
 
     // event loop
     event_t event;
@@ -383,20 +261,16 @@ int main() {
 
                         break;
                     case 'w': 
-                        v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
-                        v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
-                        v_y = sinf(RADIANS(-angle_z)) * SPEED;
-                        break;
-                    case 's':
                         v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * -SPEED;
                         v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * -SPEED;
                         v_y = sinf(RADIANS(-angle_z)) * -SPEED;
                         break;
+                    case 's':
+                        v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
+                        v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
+                        v_y = sinf(RADIANS(-angle_z)) * SPEED;
+                        break;
                     default: break;
-                }
-
-                if(key >= '1' && key <= '4') {
-                    layer = key - '0' - 1;
                 }
             } else if(event.type == EVENT_KEY_RELEASE) {
                 char key = event.eventkey.key;
@@ -421,52 +295,31 @@ int main() {
         angle_y += (dm_x) / 10000.0f;
         angle_z += (-dm_y) / 10000.0f;
 
+        cam_pos.x += v_x;
+        cam_pos.y += v_y;
+        cam_pos.z += v_z;
+
         g_lock_mouse();
         pm_x = 320; pm_y = 240;
         m_x = 320; m_y = 240;
 
-        view_pos[3] += v_x;
-        view_pos[7] += v_y;
-        view_pos[11] += v_z;
-
-        //angle_y += v_ay;
-        //angle_z += v_az;
-
-        set_rotation_y(angle_y, rotation_y);
-        set_rotation_x(-angle_z, rotation_z);
+        view = mat4_rotation_x(-angle_z);
+        view = mat4_mul_mat4(view, mat4_rotation_y(angle_y));
+        view = mat4_mul_mat4(view, mat4_translation(-cam_pos.x, -cam_pos.y, -cam_pos.z));
 
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(shader->program);
-
-        glUniformMatrix4fv(matrix_location, 1, GL_TRUE, projection);
-        
-        glUniformMatrix4fv(rotation_y_location, 1, GL_TRUE, rotation_y);
-        glUniformMatrix4fv(rotation_z_location, 1, GL_TRUE, rotation_z);
-        glUniformMatrix4fv(view_location, 1, GL_TRUE, view_pos);
-        glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
-        glUniform1i(layer_location, layer);
+        glUniformMatrix4fv(model_location, 1, GL_TRUE, model.m);
+        glUniformMatrix4fv(view_location, 1, GL_TRUE, view.m);
+        glUniformMatrix4fv(projection_location, 1, GL_TRUE, projection.m);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
         glBindVertexArray(VAO);
 
         glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_INT, (void*)0);
-
-        /*model[3] = 0;
-        model[11] = -4;
-        for(int i = 0; i < 4; ++i) {
-            for(int x = 0; x < 4; ++x) {
-                glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
-                glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, (void*)0);
-
-                
-                model[3]++;
-            }
-            model[3] = 0;
-            model[11]--;
-        }*/
 
         g_swap_buffers();
     }

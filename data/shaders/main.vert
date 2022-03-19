@@ -7,14 +7,13 @@ layout (location = 2) in float aFace;
 out vec2 texCord;
 out float face;
 
-uniform mat4 matrix;
 uniform mat4 model;
-uniform mat4 rotation_y;
-uniform mat4 rotation_z;
-uniform mat4 view_pos;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main() {
     texCord = aTexCord;
     face = aFace;
-    gl_Position = matrix * rotation_z * rotation_y * view_pos * model * vec4(aPos.x, aPos.y, aPos.z, 1.0);
+
+    gl_Position = projection * view * model * vec4(aPos.x, aPos.y, aPos.z, 1.0);
 }
