@@ -45,19 +45,144 @@ void set_rotation_x(float angle, float m[]) {
     m[10] = cosf(RADIANS(angle));
 }
 
+const float CUBE_VERTEX[] = {
+    // front, right, back, left
+    -0.5f,  0.5f,  0.5f, 0.0f, 1.0f,    // 0  left top front
+     0.5f,  0.5f,  0.5f, 1.0f, 1.0f,    // 1  right top front
+     0.5f, -0.5f,  0.5f, 1.0f, 0.0f,    // 2  right bottom front
+    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,    // 3  left bottom front
+
+     0.5f,  0.5f, -0.5f, 0.0f, 1.0f,    // 4  right top back
+    -0.5f,  0.5f, -0.5f, 1.0f, 1.0f,    // 5  left top back
+    -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,    // 6  left bottom back
+     0.5f, -0.5f, -0.5f, 0.0f, 0.0f,    // 7  right bottom back
+
+    // top
+    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,    // 8  left top back
+     0.5f,  0.5f, -0.5f, 1.0f, 1.0f,    // 9  right top back
+     0.5f,  0.5f,  0.5f, 1.0f, 0.0f,    // 10 right top front
+    -0.5f,  0.5f,  0.5f, 0.0f, 0.0f,    // 11 left top front
+
+    // bottom
+    -0.5f, -0.5f,  0.5f, 0.0f, 1.0f,    // 12 left bottom front
+     0.5f, -0.5f,  0.5f, 1.0f, 1.0f,    // 13 right bottom front
+     0.5f, -0.5f, -0.5f, 1.0f, 0.0f,    // 14 right bottom back
+    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f     // 15 left bottom back
+};
+
+const unsigned int CUBE_INDICES[] = {
+    // front
+    0, 1, 2,
+    2, 3, 0,
+
+    // back
+    4, 5, 6,
+    6, 7, 4,
+        
+    // right
+    1, 4, 7,
+    7, 2, 1,
+
+    // left
+    5, 0, 3,
+    3, 6, 5,
+
+    // top
+    8, 9, 10,
+    10, 11, 8,
+
+    // bottom
+    12, 13, 14,
+    14, 15, 12
+};
+
+const unsigned CHUNK_Z = 4, CHUNK_X = 4, CHUNK_Y = 1;
+
+uint8_t chunk[16] = {
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1
+};
+
+// 1 vertex - 6 floats
+// 1 face - 4 vertex
+// 1 cube - 6 faces - 24 vertex - 144 floats
+
+// 1 face - 6 indices
+// 1 cube - 6 faces - 36 indices
+
+float mesh[2304];
+GLuint mesh_indices[576];
+int mesh_index = 0;
+int vertex_count = 0;
+int indices_count = 0;
+
+// direction 0 - front, 1 - back, 2 - right, 3 - left, 4 - top, 5 - bottom
+void emit_face(int x, int y, int z, int direction) {
+    // emit vertices
+    for(int i = 0; i < 4; ++i) {
+        const float *v = (i != 3 ? &CUBE_VERTEX[CUBE_INDICES[direction * 6 + i] * 5] : &CUBE_VERTEX[CUBE_INDICES[direction * 6 + 4] * 5]);
+
+        mesh[mesh_index++] = x + v[0]; // position x
+        mesh[mesh_index++] = y + v[1]; // position y
+        mesh[mesh_index++] = z + v[2]; // position z
+        mesh[mesh_index++] = v[3]; // uv.x
+        mesh[mesh_index++] = v[4]; // uv.y
+
+        if(direction == 4) mesh[mesh_index++] = 1;
+        else if(direction == 5) mesh[mesh_index++] = 2;
+        else mesh[mesh_index++] = 0;
+    }
+
+    for(int i = 0; i < 6; ++i) {
+        mesh_indices[indices_count++] = vertex_count + CUBE_INDICES[i];
+    }
+
+    vertex_count += 4;
+}
+
+void make_mesh() {
+    mesh_index    = 0;
+    vertex_count  = 0;
+    indices_count = 0;
+
+    for(int i = 0; i < 1; ++i) {
+        emit_face(0, 0, 0, 0);
+        emit_face(0, 0, 0, 1);
+        emit_face(0, 0, 0, 2);
+        emit_face(0, 0, 0, 3);
+        emit_face(0, 0, 0, 4);
+        emit_face(0, 0, 0, 5);
+    }
+}
+
+
+
 int main() {
     g_init();
 
     float vertices[] = {
-        -1.0f, 1.0f, 1.0f, 0.0f, 1.0f,      // 0 left top front
-        1.0f, 1.0f, 1.0f, 1.0f, 1.0f,       // 1 right top front
-        1.0f, -1.0f, 1.0f, 1.0f, 0.0f,      // 2 right bottom front
-        -1.0f, -1.0f, 1.0f, 0.0f, 0.0f,     // 3 left bottom front
+        // front, right, back, left
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0,   // 0  left top front
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f,  0,   // 1  right top front
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0,   // 2  right bottom front
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,0,   // 3  left bottom front
 
-        1.0f, 1.0f, -1.0f, 0.0f, 1.0f,      // 4 right top back
-        -1.0f, 1.0f, -1.0f, 1.0f, 1.0f,     // 5 left top back
-        -1.0f, -1.0f, -1.0f, 1.0f, 0.0f,    // 6 left bottom back
-        1.0f, -1.0f, -1.0f, 0.0f, 0.0f      // 7 right bottom back
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0,   // 4  right top back
+        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,0,   // 5  left top back
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,0,  // 6  left bottom back
+        0.5f, -0.5f, -0.5f, 0.0f, 0.0f,0,   // 7  right bottom back
+
+        // top
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,1,   // 8  left top back
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1,   // 9  right top back
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f,  1,   // 10 right top front
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1,   // 11 left top front
+
+        // bottom
+        -0.5f, -0.5f, 0.5f, 0.0f, 1.0f,2,   // 12 left bottom front
+        0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 2,   // 13 right bottom front
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,2,   // 14 right bottom back
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,2,  // 15 left bottom back
     };
 
     unsigned int indices[] = {
@@ -78,13 +203,21 @@ int main() {
         3, 6, 5,
 
         // top
-        5, 4, 1,
-        1, 0, 5,
+        8, 9, 10,
+        10, 11, 8,
 
         // bottom
-        3, 2, 7,
-        7, 6, 3
+        12, 13, 14,
+        14, 15, 12
     };
+
+    make_mesh();
+
+    for(int i = 0; i < mesh_index; ++i) {
+        printf("%f ", mesh[i]);
+
+        if((i + 1) % 6 == 0) printf("\n");
+    }
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEPTH_TEST);
@@ -100,15 +233,18 @@ int main() {
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, mesh_index * sizeof(float), mesh, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_count * sizeof(GLuint), mesh_indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 
@@ -171,9 +307,16 @@ int main() {
     };
 
     float model[16] = {
-        1.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, -4.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+
+    float view_pos[16] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f
     };
 
@@ -196,6 +339,7 @@ int main() {
     GLint layer_location = glGetUniformLocation(shader->program, "layer");
     GLint rotation_y_location = glGetUniformLocation(shader->program, "rotation_y");
     GLint rotation_z_location = glGetUniformLocation(shader->program, "rotation_z");
+    GLint view_location = glGetUniformLocation(shader->program, "view_pos");
 
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
@@ -238,13 +382,16 @@ int main() {
                         shader = make_shader("data/shaders/main");
 
                         break;
-                    case 's': v_az = -ROTATION_SPEED; break;
-                    case 'w': v_az = ROTATION_SPEED; break;
-                    case 'a': v_ay = ROTATION_SPEED; break;
-                    case 'd': v_ay = -ROTATION_SPEED; break;
-                    case 't': v_y = -SPEED; break;
-                    case 'g': v_y = SPEED; break;
-                    break;
+                    case 'w': 
+                        v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
+                        v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
+                        v_y = sinf(RADIANS(-angle_z)) * SPEED;
+                        break;
+                    case 's':
+                        v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * -SPEED;
+                        v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * -SPEED;
+                        v_y = sinf(RADIANS(-angle_z)) * -SPEED;
+                        break;
                     default: break;
                 }
 
@@ -254,9 +401,11 @@ int main() {
             } else if(event.type == EVENT_KEY_RELEASE) {
                 char key = event.eventkey.key;
 
-                if(key == 's' || key == 'w') v_az = 0;
-                else if(key == 'a' || key == 'd') v_ay = 0;
-                else if(key == 't' || key == 'g') v_y = 0;
+                if(key == 'w' || key == 's') {
+                    v_x = 0;
+                    v_y = 0;
+                    v_z = 0;
+                }
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
                 done = 1;
@@ -276,9 +425,9 @@ int main() {
         pm_x = 320; pm_y = 240;
         m_x = 320; m_y = 240;
 
-        model[3] += v_x;
-        model[7] += v_y;
-        model[11] += v_z;
+        view_pos[3] += v_x;
+        view_pos[7] += v_y;
+        view_pos[11] += v_z;
 
         //angle_y += v_ay;
         //angle_z += v_az;
@@ -292,15 +441,32 @@ int main() {
         glUseProgram(shader->program);
 
         glUniformMatrix4fv(matrix_location, 1, GL_TRUE, projection);
-        glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
+        
         glUniformMatrix4fv(rotation_y_location, 1, GL_TRUE, rotation_y);
         glUniformMatrix4fv(rotation_z_location, 1, GL_TRUE, rotation_z);
+        glUniformMatrix4fv(view_location, 1, GL_TRUE, view_pos);
+        glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
         glUniform1i(layer_location, layer);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, (void*)0);
+
+        glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_INT, (void*)0);
+
+        /*model[3] = 0;
+        model[11] = -4;
+        for(int i = 0; i < 4; ++i) {
+            for(int x = 0; x < 4; ++x) {
+                glUniformMatrix4fv(model_location, 1, GL_TRUE, model);
+                glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, (void*)0);
+
+                
+                model[3]++;
+            }
+            model[3] = 0;
+            model[11]--;
+        }*/
 
         g_swap_buffers();
     }
