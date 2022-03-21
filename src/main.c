@@ -54,7 +54,7 @@ int main() {
 
     mat4_t model = mat4_identity();
     mat4_t view = mat4_identity();
-    mat4_t projection = mat4_perspective(60.f, 640.f / 480.f, 0.1f, 10.f);
+    mat4_t projection = mat4_perspective(45.f, 640.f / 480.f, 0.1f, 10.f);
 
     GLint model_location = glGetUniformLocation(shader->program, "model");
     GLint view_location = glGetUniformLocation(shader->program, "view");
@@ -111,6 +111,10 @@ int main() {
                         v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
                         v_y = sinf(RADIANS(-angle_z)) * SPEED;
                         break;
+                    case 'g':
+                        chunk->data[2] = 0;
+                        prepare_chunk(chunk);
+                        break;
                     default: break;
                 }
             } else if(event.type == EVENT_KEY_RELEASE) {
@@ -133,8 +137,13 @@ int main() {
         dm_x = m_x - pm_x;
         dm_y = m_y - pm_y;
 
-        angle_y += (dm_x) / 10000.0f;
-        angle_z += (-dm_y) / 10000.0f;
+        angle_y += (dm_x) / 5.f;
+        angle_z += (-dm_y) / 5.f;
+
+        if(angle_z > 90.f) angle_z = 90.f;
+        else if(angle_z < -90.f) angle_z = -90.f;
+
+        printf("angle_z: %f\n", angle_z);
 
         cam_pos.x += v_x;
         cam_pos.y += v_y;

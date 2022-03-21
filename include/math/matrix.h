@@ -2,7 +2,7 @@
 #define __MATRIX_H__
 
 #define PI 3.14159265359
-#define RADIANS(a) (a) * (180 / PI)
+#define RADIANS(a) (a) * (PI / 180.f)
 
 typedef struct _mat4_s {
     float m[16];
