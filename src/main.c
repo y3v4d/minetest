@@ -56,20 +56,13 @@ int main() {
     mat4_t view = mat4_identity();
     mat4_t projection = mat4_perspective(45.f, 640.f / 480.f, 0.1f, 10.f);
 
-    GLint model_location = glGetUniformLocation(shader->program, "model");
-    GLint view_location = glGetUniformLocation(shader->program, "view");
-    GLint projection_location = glGetUniformLocation(shader->program, "projection");
-
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
-    float v_x = 0.0f;
-    float v_y = 0.0f;
-    float v_z = 0.0f;
 
-    float angle_y = 0.f;
-    float angle_z = 0.f;
-    float v_ay = 0.0f;
-    float v_az = 0.0f;
+    vec3f pos = { 0.f, 0.f, 0.f };
+    vec3f vel = { 0.f, 0.f, 0.f };
+
+    vec2f rot = { 0.f, 0.f };
 
     float m_x = 0.0f;
     float m_y = 0.0f;
@@ -80,7 +73,7 @@ int main() {
     float dm_x = 0.0f;
     float dm_y = 0.0f;
 
-    vec3f cam_pos = { 0.f, 0.f, 0.f };
+    int move = 0;
 
     // event loop
     event_t event;
@@ -99,17 +92,12 @@ int main() {
                     case 'r':
                         close_shader(shader);
                         shader = make_shader("data/shaders/main");
-
                         break;
-                    case 'w': 
-                        v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * -SPEED;
-                        v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * -SPEED;
-                        v_y = sinf(RADIANS(-angle_z)) * -SPEED;
+                    case 'w':
+                        move = 1;
                         break;
                     case 's':
-                        v_z = cosf(RADIANS(angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
-                        v_x = sinf(RADIANS(-angle_y)) * cosf(RADIANS(angle_z)) * SPEED;
-                        v_y = sinf(RADIANS(-angle_z)) * SPEED;
+                        move = -1;
                         break;
                     case 'g':
                         chunk->data[2] = 0;
@@ -121,9 +109,7 @@ int main() {
                 char key = event.eventkey.key;
 
                 if(key == 'w' || key == 's') {
-                    v_x = 0;
-                    v_y = 0;
-                    v_z = 0;
+                    move = 0;
                 }
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
@@ -137,33 +123,44 @@ int main() {
         dm_x = m_x - pm_x;
         dm_y = m_y - pm_y;
 
-        angle_y += (dm_x) / 5.f;
-        angle_z += (-dm_y) / 5.f;
+        rot.x += (-dm_y) / 5.f;
+        rot.y += (-dm_x) / 5.f;
 
-        if(angle_z > 90.f) angle_z = 90.f;
-        else if(angle_z < -90.f) angle_z = -90.f;
+        if(rot.x > 90.f) rot.x = 90.f;
+        else if(rot.x < -90.f) rot.x = -90.f;
 
-        printf("angle_z: %f\n", angle_z);
+        if(move != 0) {
+            // Negative sin and cos where Y rotation
+            // because the camera is looking at -z by default
+            // (Y rotation responsible for the horizontal and depth movement)
+            vel.x = -sinf(RADIANS(rot.y)) * cosf(RADIANS(rot.x)) * SPEED * move;
+            vel.y = sinf(RADIANS(rot.x)) * SPEED * move;
+            vel.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x)) * SPEED * move;
+        } else {
+            vel.x = 0;
+            vel.y = 0;
+            vel.z = 0;
+        }
 
-        cam_pos.x += v_x;
-        cam_pos.y += v_y;
-        cam_pos.z += v_z;
+        pos.x += vel.x;
+        pos.y += vel.y;
+        pos.z += vel.z;
 
         g_lock_mouse();
         pm_x = 320; pm_y = 240;
         m_x = 320; m_y = 240;
 
-        view = mat4_rotation_x(-angle_z);
-        view = mat4_mul_mat4(view, mat4_rotation_y(angle_y));
-        view = mat4_mul_mat4(view, mat4_translation(-cam_pos.x, -cam_pos.y, -cam_pos.z));
+        view = mat4_rotation_x(-rot.x);
+        view = mat4_mul_mat4(view, mat4_rotation_y(-rot.y));
+        view = mat4_mul_mat4(view, mat4_translation(-pos.x, -pos.y, -pos.z));
 
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(shader->program);
-        glUniformMatrix4fv(model_location, 1, GL_TRUE, model.m);
-        glUniformMatrix4fv(view_location, 1, GL_TRUE, view.m);
-        glUniformMatrix4fv(projection_location, 1, GL_TRUE, projection.m);
+        shader_use(shader);
+        shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
+        shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, view.m);
+        shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, projection.m);
 
         atlas_bind(atlas);
         chunk_render(chunk);

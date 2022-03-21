@@ -1,12 +1,12 @@
 #include "system.h"
 #include "constants.h"
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <X11/Xatom.h>
 
 #include <GL/glew.h>
@@ -21,6 +21,8 @@ int screen;
 GLXContext context;
 
 XEvent x_event;
+
+Cursor xcursor;
 
 // atoms
 Atom wm_delete_window;
@@ -171,6 +173,21 @@ void g_init() {
     // start glew
     glewExperimental = GL_TRUE;
     glewInit();
+
+    const char data[] = {
+        0
+    };
+
+    // make invisible cursor (junky ass shit)
+    Pixmap cursor_pixmap = XCreateBitmapFromData(display, window, data, 1, 1);
+    XColor color = {
+        .flags = 0
+    };
+    XQueryColor(display, XDefaultColormap(display, screen), &color);
+    xcursor = XCreatePixmapCursor(display, cursor_pixmap, cursor_pixmap, &color, &color, 0, 0);
+
+    XDefineCursor(display, window, xcursor);
+    XFreePixmap(display, cursor_pixmap);
 }
 
 Bool mouse_warped = False;
@@ -184,6 +201,8 @@ void g_swap_buffers() {
 }
 
 void g_close() {
+    XFreeCursor(display, xcursor);
+
     glXMakeCurrent(display, 0, 0);
     glXDestroyContext(display, context);
 

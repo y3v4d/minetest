@@ -120,6 +120,16 @@ shader_t* make_shader(const char *path) {
     return shader;
 }
 
+void shader_use(const shader_t *shader) {
+    glUseProgram(shader->program);
+}
+
+void shader_uniform(const shader_t *shader, const char *name, uniform_type_e t, size_t count, const void *data) {
+    if(t == UNIFORM_MATRIX_4) {
+        glUniformMatrix4fv(glGetUniformLocation(shader->program, name), count, GL_TRUE, (const GLfloat*)data);
+    }
+}
+
 void close_shader(shader_t *shader) {
     if(shader == NULL) return;
 
