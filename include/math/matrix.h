@@ -1,6 +1,9 @@
 #ifndef __MATRIX_H__
 #define __MATRIX_H__
 
+#define PI 3.14159265359
+#define RADIANS(a) (a) * (180 / PI)
+
 typedef struct _mat4_s {
     float m[16];
 } mat4_t;

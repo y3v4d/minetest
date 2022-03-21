@@ -1,9 +1,6 @@
 #include "math/matrix.h"
 #include "math.h"
 
-#define PI 3.14159265359
-#define RADIANS(a) (a) * (180 / PI)
-
 mat4_t mat4_identity() {
     return (mat4_t) { 
         1.f, 0.f, 0.f, 0.f,

@@ -17,124 +17,13 @@
 #include "math/vec.h"
 #include "math/matrix.h"
 
-#define PI 3.14159265359
-#define RADIANS(a) (a) * (180 / PI)
+#include "chunk.h"
 
 void GLAPIENTRY
 MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
     fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message );
-}
-
-const float CUBE_VERTEX[] = {
-    // front, right, back, left
-    -0.5f,  0.5f,  0.5f, 0.0f, 1.0f,    // 0  left top front
-     0.5f,  0.5f,  0.5f, 1.0f, 1.0f,    // 1  right top front
-     0.5f, -0.5f,  0.5f, 1.0f, 0.0f,    // 2  right bottom front
-    -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,    // 3  left bottom front
-
-     0.5f,  0.5f, -0.5f, 0.0f, 1.0f,    // 4  right top back
-    -0.5f,  0.5f, -0.5f, 1.0f, 1.0f,    // 5  left top back
-    -0.5f, -0.5f, -0.5f, 1.0f, 0.0f,    // 6  left bottom back
-     0.5f, -0.5f, -0.5f, 0.0f, 0.0f,    // 7  right bottom back
-
-    // top
-    -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,    // 8  left top back
-     0.5f,  0.5f, -0.5f, 1.0f, 1.0f,    // 9  right top back
-     0.5f,  0.5f,  0.5f, 1.0f, 0.0f,    // 10 right top front
-    -0.5f,  0.5f,  0.5f, 0.0f, 0.0f,    // 11 left top front
-
-    // bottom
-    -0.5f, -0.5f,  0.5f, 0.0f, 1.0f,    // 12 left bottom front
-     0.5f, -0.5f,  0.5f, 1.0f, 1.0f,    // 13 right bottom front
-     0.5f, -0.5f, -0.5f, 1.0f, 0.0f,    // 14 right bottom back
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f     // 15 left bottom back
-};
-
-const unsigned int CUBE_INDICES[] = {
-    // front
-    0, 1, 2,
-    2, 3, 0,
-
-    // back
-    4, 5, 6,
-    6, 7, 4,
-        
-    // right
-    1, 4, 7,
-    7, 2, 1,
-
-    // left
-    5, 0, 3,
-    3, 6, 5,
-
-    // top
-    8, 9, 10,
-    10, 11, 8,
-
-    // bottom
-    12, 13, 14,
-    14, 15, 12
-};
-
-const unsigned CHUNK_Z = 4, CHUNK_X = 4, CHUNK_Y = 1;
-
-uint8_t chunk[16] = {
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1
-};
-
-// 1 vertex - 6 floats
-// 1 face - 4 vertex
-// 1 cube - 6 faces - 24 vertex - 144 floats
-
-// 1 face - 6 indices
-// 1 cube - 6 faces - 36 indices
-
-float mesh[2304];
-GLuint mesh_indices[576];
-int mesh_index = 0;
-int vertex_count = 0;
-int indices_count = 0;
-
-// direction 0 - front, 1 - back, 2 - right, 3 - left, 4 - top, 5 - bottom
-void emit_face(int x, int y, int z, int direction) {
-    // emit vertices
-    for(int i = 0; i < 4; ++i) {
-        const float *v = (i != 3 ? &CUBE_VERTEX[CUBE_INDICES[direction * 6 + i] * 5] : &CUBE_VERTEX[CUBE_INDICES[direction * 6 + 4] * 5]);
-
-        mesh[mesh_index++] = x + v[0]; // position x
-        mesh[mesh_index++] = y + v[1]; // position y
-        mesh[mesh_index++] = z + v[2]; // position z
-        mesh[mesh_index++] = v[3]; // uv.x
-        mesh[mesh_index++] = v[4]; // uv.y
-
-        if(direction == 4) mesh[mesh_index++] = 1;
-        else if(direction == 5) mesh[mesh_index++] = 2;
-        else mesh[mesh_index++] = 0;
-    }
-
-    for(int i = 0; i < 6; ++i) {
-        mesh_indices[indices_count++] = vertex_count + CUBE_INDICES[i];
-    }
-
-    vertex_count += 4;
-}
-
-void make_mesh() {
-    mesh_index    = 0;
-    vertex_count  = 0;
-    indices_count = 0;
-
-    for(int i = 0; i < 4; ++i) {
-        emit_face(i, 0, 0, 0);
-        emit_face(i, 0, 0, 1);
-        emit_face(i, 0, 0, 2);
-        emit_face(i, 0, 0, 3);
-        emit_face(i, 0, 0, 4);
-        emit_face(i, 0, 0, 5);
-    }
+        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
 }
 
 int main() {
@@ -147,7 +36,8 @@ int main() {
     const GLubyte *version = glGetString(GL_VERSION);
     printf("OpenGL version: %s\n", version);
 
-    make_mesh();
+    chunk_t *chunk = initialize_chunk();
+    prepare_chunk(chunk);
     
     unsigned int VBO, VAO, VEO;
     glGenBuffers(1, &VBO);
@@ -156,10 +46,10 @@ int main() {
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, mesh_index * sizeof(float), mesh, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, chunk->mesh_counter * sizeof(float), chunk->vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_count * sizeof(GLuint), mesh_indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, chunk->index_count * sizeof(GLuint), chunk->indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
@@ -319,11 +209,12 @@ int main() {
         glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
         glBindVertexArray(VAO);
 
-        glDrawElements(GL_TRIANGLES, indices_count, GL_UNSIGNED_INT, (void*)0);
+        glDrawElements(GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_INT, (void*)0);
 
         g_swap_buffers();
     }
 
+    free_chunk(chunk);
     close_shader(shader);
     g_close();
 
