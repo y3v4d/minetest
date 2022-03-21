@@ -2,6 +2,8 @@
 #define __CHUNK_H__
 
 #include <stdint.h>
+#include "glx/vbo.h"
+#include "glx/vao.h"
 
 #define CHUNK_SIZE_X 16
 #define CHUNK_SIZE_Y 2
@@ -27,11 +29,15 @@ typedef struct _chunk_s {
 
     int mesh_counter;
 
+    vbo_t vbo, vio;
+    vao_t vao;
+
     uint8_t *data;
 } chunk_t;
 
 chunk_t *initialize_chunk();
 void prepare_chunk(chunk_t *p);
+void chunk_render(chunk_t *p);
 void free_chunk(chunk_t *p);
 
 #endif

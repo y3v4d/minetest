@@ -1,4 +1,6 @@
 #include "chunk.h"
+#include "glx/vao.h"
+#include "glx/vbo.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,6 +41,9 @@ chunk_t *initialize_chunk() {
     const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
     p->data = (uint8_t*)malloc(sizeof(uint8_t) * SIZE);
 
+    p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
+    p->indices = (int*)malloc(sizeof(float) * SIZE * 6 * 6);
+
     memset(p->data, 1, sizeof(uint8_t) * SIZE);
     p->data[0] = 0;
     p->data[1] = 0;
@@ -47,8 +52,18 @@ chunk_t *initialize_chunk() {
 
     p->data[256] = 0;
 
-    p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
-    p->indices = (int*)malloc(sizeof(float) * SIZE * 6 * 6);
+    p->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
+    p->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
+    p->vao = vao_generate();
+
+    vao_bind(&p->vao);
+    vbo_bind(&p->vbo);
+    vbo_bind(&p->vio);
+    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+
+    vao_bind(&p->vao);
 
     return p;
 }
@@ -114,10 +129,24 @@ void prepare_chunk(chunk_t *p) {
             }
         }
     }
+
+    vbo_bind(&p->vbo);
+    vbo_data(&p->vbo, p->mesh_counter * sizeof(float), p->vertices);
+    vbo_bind(&p->vio);
+    vbo_data(&p->vio, p->index_count * sizeof(GLuint), p->indices);
+}
+
+void chunk_render(chunk_t *p) {
+    vao_bind(&p->vao);
+    glDrawElements(GL_TRIANGLES, p->index_count, GL_UNSIGNED_INT, (void*)0);
 }
 
 void free_chunk(chunk_t *p) {
     if(!p) return;
+
+    vbo_destroy(&p->vbo);
+    vbo_destroy(&p->vio);
+    vao_destroy(&p->vao);
 
     free(p->vertices);
     free(p->indices);
