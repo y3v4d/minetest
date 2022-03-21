@@ -14,6 +14,8 @@
 
 #include <math.h>
 
+#include "atlas.h"
+
 #include "math/vec.h"
 #include "math/matrix.h"
 
@@ -45,39 +47,10 @@ int main() {
         return 1;
     }
 
-    // load texture atlas
-    bmp_t *img = load_bmp("data/textures/atlas.bmp");
-    if(!img) {
-        fprintf(stderr, "Couldn't load texture!\n");
+    atlas_t *atlas = atlas_generate("data/textures/atlas.bmp", 16, 16);
+    if(!atlas) {
         return 1;
     }
-
-    unsigned int texture;
-    const unsigned TILE_W = 16, TILE_H = 16;
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
-
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, TILE_W, TILE_H, 4);
-
-    byte_t tile_buffer[TILE_W * TILE_H * 3];
-    byte_t *start = img->data;
-    for(int y = 0; y < img->height / TILE_H; ++y) {
-        for(int x = 0; x < img->width / TILE_W; ++x) {
-            start = img->data + ((y * TILE_H * img->width) + TILE_W * x) * 3;
-
-            for(int row = 0; row < TILE_H; ++row) {
-                memcpy(tile_buffer + row * TILE_W * 3, start + row * img->width * 3, TILE_W * 3);
-            }
-
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (y * 2 + x), TILE_W, TILE_H, 1, GL_BGR, GL_UNSIGNED_BYTE, tile_buffer);
-        }
-    }
-
-    free_bmp(img);
 
     mat4_t model = mat4_identity();
     mat4_t view = mat4_identity();
@@ -183,13 +156,13 @@ int main() {
         glUniformMatrix4fv(view_location, 1, GL_TRUE, view.m);
         glUniformMatrix4fv(projection_location, 1, GL_TRUE, projection.m);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
+        atlas_bind(atlas);
         chunk_render(chunk);
 
         g_swap_buffers();
     }
 
+    atlas_destroy(atlas);
     free_chunk(chunk);
     close_shader(shader);
     g_close();
