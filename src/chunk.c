@@ -45,10 +45,6 @@ chunk_t *initialize_chunk() {
     p->indices = (int*)malloc(sizeof(float) * SIZE * 6 * 6);
 
     memset(p->data, 1, sizeof(uint8_t) * SIZE);
-    p->data[0] = 0;
-    p->data[1] = 0;
-
-    p->data[140] = 0;
 
     p->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
     p->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
@@ -77,12 +73,14 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d) {
         p->vertices[p->mesh_counter++] = TEX_UV[i * 2];
         p->vertices[p->mesh_counter++] = TEX_UV[i * 2 + 1];
 
-        if(y == 1) {
+        if(y == CHUNK_SIZE_Y - 1) {
             if(d == TOP) p->vertices[p->mesh_counter++] = 1;
             else if(d == BOTTOM) p->vertices[p->mesh_counter++] = 2;
             else p->vertices[p->mesh_counter++] = 0;
-        } else {
+        } else if(y == CHUNK_SIZE_Y - 2) {
             p->vertices[p->mesh_counter++] = 2;
+        } else {
+            p->vertices[p->mesh_counter++] = 3;
         }
         
     }

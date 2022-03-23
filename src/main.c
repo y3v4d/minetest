@@ -34,21 +34,34 @@ float absf(float i) {
 }
 
 const float HIGH_VERTICES[] = {
-    0.f,    1.f,    0.f,    3.f,    // 0 - left top front
-    1.f,    1.f,    0.f,    3.f,    // 1 - right top front
-    1.f,    0.f,    0.f,    3.f,    // 2 - right bottom front
-    0.f,    0.f,    0.f,    3.f,    // 3 - left bottom front
+    0.f,    1.f,    0.f,    4.f,    // 0 - left top front
+    1.f,    1.f,    0.f,    4.f,    // 1 - right top front
+    1.f,    0.f,    0.f,    4.f,    // 2 - right bottom front
+    0.f,    0.f,    0.f,    4.f,    // 3 - left bottom front
 
-    1.f,    1.f,    -1.f,    3.f,   // 4 - right top back
-    0.f,    1.f,    -1.f,    3.f,   // 5 - left top back
-    0.f,    0.f,    -1.f,    3.f,   // 6 - left bottom back
-    1.f,    0.f,    -1.f,    3.f,   // 7 - right bottom back
+    1.f,    1.f,    -1.f,    4.f,   // 4 - right top back
+    0.f,    1.f,    -1.f,    4.f,   // 5 - left top back
+    0.f,    0.f,    -1.f,    4.f,   // 6 - left bottom back
+    1.f,    0.f,    -1.f,    4.f,   // 7 - right bottom back
 };
 
 const unsigned HIGH_INDICES[] = {
     0, 1, 1, 4, 4, 5, 5, 0,
     3, 2, 2, 7, 7, 6, 6, 3,
     0, 3, 1, 2, 4, 7, 5, 6
+};
+
+const float C_SIZE = 0.005f;
+const float CURSOR_VERTICES[] = {
+    -C_SIZE, C_SIZE, 0.f, 4.f,
+    C_SIZE, C_SIZE, 0.f, 4.f,
+    C_SIZE, -C_SIZE, 0.f, 4.f,
+    -C_SIZE, -C_SIZE, 0.f, 4.f
+};
+
+const unsigned CURSOR_INDICES[] = {
+    0, 1, 2,
+    2, 3, 0
 };
 
 int main() {
@@ -82,7 +95,7 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = { 0.f, 1.5f, 0.f };
+    vec3f pos = { 8, 19, -8 };
     vec3f vel = { 0.f, 0.f, 0.f };
 
     vec2f rot = { 0.f, 0.f };
@@ -119,12 +132,32 @@ int main() {
 
     vao_bind(NULL);
 
+    vbo_t cursor_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
+    vbo_t cursor_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
+    vao_t cursor_vao = vao_generate();
+
+    vao_bind(&cursor_vao);
+    vbo_bind(&cursor_vbo);
+    vbo_data(&cursor_vbo, sizeof(CURSOR_VERTICES), CURSOR_VERTICES);
+
+    vbo_bind(&cursor_vio);
+    vbo_data(&cursor_vio, sizeof(CURSOR_INDICES), CURSOR_INDICES);
+
+    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    vao_bind(NULL);
+
     vec3i tile;
+
+    mat4_t cursor_i = mat4_identity();
+
+    shader_use(shader);
 
     // event loop
     event_t event;
     short done = 0;
-    glLineWidth(2.f);
+    glLineWidth(4.f);
     while(!done) {
         while(g_pending_events()) {
             g_get_event(&event);
@@ -237,15 +270,13 @@ int main() {
             check.x = pos.x + facing.x * t;
             check.y = pos.y + facing.y * t;
             check.z = pos.z + facing.z * t;
-            
+
             if(get_chunk_block(chunk, tile.x, tile.y, tile.z)) {
                 found = 1;
-                printf("Looking at (%d, %d, %d)\n", tile.x, tile.y, tile.z);
+                //printf("Looking at (%d, %d, %d)\n", tile.x, tile.y, tile.z);
                 break;
             } else found = 0;
         }
-
-        printf("End of searching\n");
 
         if(move != 0) {
             // Negative sin and cos where Y rotation
@@ -259,6 +290,9 @@ int main() {
             vel.y = 0;
             vel.z = 0;
         }
+
+        //vel.y -= 0.01f; // gravity
+        //if(vel.y < -0.1f) vel.y = -0.2f;
 
         pos.x += vel.x;
         pos.y += vel.y;
@@ -279,7 +313,14 @@ int main() {
         model.m[7] = 0.f;
         model.m[11] = 0.f;
 
-        shader_use(shader);
+        shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, cursor_i.m);
+        shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
+
+        vao_bind(&cursor_vao);
+        vbo_bind(&cursor_vbo);
+        vbo_bind(&cursor_vio);
+        glDrawElements(GL_TRIANGLES, sizeof(CURSOR_INDICES), GL_UNSIGNED_INT, (void*)0);
+        
         shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
         shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, view.m);
         shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, projection.m);
@@ -300,12 +341,18 @@ int main() {
             glDrawElements(GL_LINES, sizeof(HIGH_INDICES), GL_UNSIGNED_INT, (void*)0);
         }
 
+
+
         g_swap_buffers();
     }
 
     vbo_destroy(&highlight_vbo);
     vbo_destroy(&highlight_vio);
     vao_destroy(&highlight_vao);
+
+    vbo_destroy(&cursor_vbo);
+    vbo_destroy(&cursor_vio);
+    vao_destroy(&cursor_vao);
 
     atlas_destroy(atlas);
     free_chunk(chunk);

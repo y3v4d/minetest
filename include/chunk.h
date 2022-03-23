@@ -6,7 +6,7 @@
 #include "glx/vao.h"
 
 #define CHUNK_SIZE_X 16
-#define CHUNK_SIZE_Y 2
+#define CHUNK_SIZE_Y 16
 #define CHUNK_SIZE_Z 16
 
 typedef enum {

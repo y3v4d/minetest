@@ -29,10 +29,14 @@ atlas_t* atlas_generate(const char *path, unsigned tile_w, unsigned tile_h) {
     glGenTextures(1, &t->ID);
     glBindTexture(GL_TEXTURE_2D_ARRAY, t->ID);
 
+    glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
+
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, t->tile_w, t->tile_h, 4);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, t->tile_w, t->tile_h, 9);
+
+    printf("Atlas tiles %d %d\n", img->width / t->tile_w, img->height / t->tile_h);
 
     byte_t tile_buffer[t->tile_w * t->tile_h * 3];
     byte_t *start = img->data;
@@ -44,7 +48,7 @@ atlas_t* atlas_generate(const char *path, unsigned tile_w, unsigned tile_h) {
                 memcpy(tile_buffer + row * t->tile_w * 3, start + row * img->width * 3, t->tile_w * 3);
             }
 
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (y * 2 + x), t->tile_w, t->tile_h, 1, GL_BGR, GL_UNSIGNED_BYTE, tile_buffer);
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (y * (img->height / t->tile_h) + x), t->tile_w, t->tile_h, 1, GL_BGR, GL_UNSIGNED_BYTE, tile_buffer);
         }
     }
 
