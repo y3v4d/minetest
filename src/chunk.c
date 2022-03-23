@@ -50,8 +50,6 @@ chunk_t *initialize_chunk() {
 
     p->data[140] = 0;
 
-    p->data[256] = 0;
-
     p->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
     p->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
     p->vao = vao_generate();
@@ -63,7 +61,7 @@ chunk_t *initialize_chunk() {
     vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
 
-    vao_bind(&p->vao);
+    vao_bind(NULL);
 
     return p;
 }
@@ -79,7 +77,7 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d) {
         p->vertices[p->mesh_counter++] = TEX_UV[i * 2];
         p->vertices[p->mesh_counter++] = TEX_UV[i * 2 + 1];
 
-        if(y == 0) {
+        if(y == 1) {
             if(d == TOP) p->vertices[p->mesh_counter++] = 1;
             else if(d == BOTTOM) p->vertices[p->mesh_counter++] = 2;
             else p->vertices[p->mesh_counter++] = 0;
@@ -98,11 +96,19 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d) {
 }
 
 uint8_t get_chunk_block(chunk_t *p, int x, int y, int z) {
-    if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || z < 0 || z >= CHUNK_SIZE_Z) {
+    if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || -z < 0 || -z >= CHUNK_SIZE_Z) {
         return 0; // TODO replace with data from other chunk
     }
 
-    return *(p->data + (y * CHUNK_SIZE_X * CHUNK_SIZE_Z) + (z * CHUNK_SIZE_X) + x);
+    return *(p->data + (y * CHUNK_SIZE_X * CHUNK_SIZE_Z) + (-z * CHUNK_SIZE_X) + x);
+}
+
+void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
+    if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || -z < 0 || -z >= CHUNK_SIZE_Z) {
+        return; // TODO replace with data from other chunk
+    }
+
+    p->data[y * CHUNK_SIZE_X * CHUNK_SIZE_Z + -z * CHUNK_SIZE_X + x] = type;
 }
 
 void prepare_chunk(chunk_t *p) {
@@ -119,12 +125,12 @@ void prepare_chunk(chunk_t *p) {
                     continue;
                 }
 
-                if(!get_chunk_block(p, x, y, z - 1)) emit_face(p, x, -y, -z, 0);
-                if(!get_chunk_block(p, x, y, z + 1)) emit_face(p, x, -y, -z, 1);
-                if(!get_chunk_block(p, x + 1, y, z)) emit_face(p, x, -y, -z, 2);
-                if(!get_chunk_block(p, x - 1, y, z)) emit_face(p, x, -y, -z, 3);
-                if(!get_chunk_block(p, x, y - 1, z)) emit_face(p, x, -y, -z, 4);
-                if(!get_chunk_block(p, x, y + 1, z)) emit_face(p, x, -y, -z, 5);
+                if(!get_chunk_block(p, x, y, -z + 1)) emit_face(p, x, y, -z, 0);
+                if(!get_chunk_block(p, x, y, -z - 1)) emit_face(p, x, y, -z, 1);
+                if(!get_chunk_block(p, x + 1, y, -z)) emit_face(p, x, y, -z, 2);
+                if(!get_chunk_block(p, x - 1, y, -z)) emit_face(p, x, y, -z, 3);
+                if(!get_chunk_block(p, x, y + 1, -z)) emit_face(p, x, y, -z, 4);
+                if(!get_chunk_block(p, x, y - 1, -z)) emit_face(p, x, y, -z, 5);
                 ++d;
             }
         }

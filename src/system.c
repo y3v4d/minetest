@@ -174,12 +174,8 @@ void g_init() {
     glewExperimental = GL_TRUE;
     glewInit();
 
-    const char data[] = {
-        0
-    };
-
     // make invisible cursor (junky ass shit)
-    Pixmap cursor_pixmap = XCreateBitmapFromData(display, window, data, 1, 1);
+    Pixmap cursor_pixmap = XCreateBitmapFromData(display, window, (const char[]){ 0 }, 1, 1);
     XColor color = {
         .flags = 0
     };
@@ -201,7 +197,7 @@ void g_swap_buffers() {
 }
 
 void g_close() {
-    XFreeCursor(display, xcursor);
+    //XFreeCursor(display, xcursor);
 
     glXMakeCurrent(display, 0, 0);
     glXDestroyContext(display, context);
