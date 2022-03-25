@@ -16,6 +16,8 @@
 #include "utils/img_loader.h"
 #include "utils/font_loader.h"
 
+#include "texture.h"
+
 #include "atlas.h"
 
 #include "math/vec.h"
@@ -107,11 +109,13 @@ int main() {
         return 1;
     }
 
-    bmp_t *font_bmp = load_bmp("data/fonts/solway_0.bmp", 1, 0);
-    if(!font_bmp) {
-        fprintf(stderr, "Couldn't locate the font\n");
+    fontbmp_t *font = fontbmp_make("data/fonts/solway.fnt");
+    if(!font) {
+        fprintf(stderr, "Error loading font\n");
         return 1;
     }
+
+    fontbmp_close(font);
 
     mat4_t model = mat4_identity();
     mat4_t view = mat4_identity();
@@ -188,18 +192,20 @@ int main() {
 
     vao_bind(NULL);
 
-    unsigned char_id = 0;
-    glGenTextures(1, &char_id);
-    glBindTexture(GL_TEXTURE_2D, char_id);
+    bmp_t *font_bmp = load_bmp("data/fonts/solway_0.bmp", 1, 0);
+    if(!font_bmp) {
+        fprintf(stderr, "Couldn't locate the font\n");
+        return 1;
+    }
 
-    glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
+    texture_t *char_texture = texture_make("data/fonts/solway_0.bmp");
+    if(!char_texture) {
+        fprintf(stderr, "Couldn't create texture\n");
+        return 1;
+    }
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font_bmp->width, font_bmp->height, 0, GL_BGRA, GL_UNSIGNED_BYTE, font_bmp->data);
-
-    free_bmp(font_bmp);
+    texture_parameter(char_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    texture_parameter(char_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     vec3i tile;
 
@@ -439,7 +445,7 @@ int main() {
         shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, cursor_p.m);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, char_id);
+        texture_bind(char_texture);
 
         vao_bind(&char_vao);
         vbo_bind(&char_vbo);
@@ -448,6 +454,8 @@ int main() {
 
         g_swap_buffers();
     }
+
+    texture_destroy(char_texture);
 
     vbo_destroy(&cursor_vbo);
     vbo_destroy(&cursor_vio);
