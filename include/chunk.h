@@ -6,19 +6,11 @@
 #include "glx/vao.h"
 
 #include "math/vec.h"
+#include "constants.h"
 
 #define CHUNK_SIZE_X 16
 #define CHUNK_SIZE_Y 16
 #define CHUNK_SIZE_Z 16
-
-typedef enum {
-    FRONT   = 0,
-    BACK    = 1,
-    RIGHT   = 2,
-    LEFT    = 3,
-    TOP     = 4,
-    BOTTOM  = 5
-} direction_e;
 
 typedef struct _chunk_s {
     // ONE VERTEX DATA

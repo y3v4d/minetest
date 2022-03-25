@@ -1,4 +1,6 @@
 #include "chunk.h"
+#include "block.h"
+
 #include "glx/vao.h"
 #include "glx/vbo.h"
 
@@ -44,7 +46,10 @@ chunk_t *initialize_chunk() {
     p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
     p->indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
 
-    memset(p->data, 1, sizeof(uint8_t) * SIZE);
+    memset(p->data, BLOCK_STONE, 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    memset(p->data + 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_DIRT, CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    memset(p->data + 5 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_GRASS, CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    memset(p->data + 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_AIR, SIZE - 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
 
     p->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
     p->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
@@ -62,7 +67,7 @@ chunk_t *initialize_chunk() {
     return p;
 }
 
-void emit_face(chunk_t *p, int x, int y, int z, direction_e d) {
+void emit_face(chunk_t *p, int x, int y, int z, direction_e d, uint8_t block_id) {
     // emit vertices
     for(int i = 0; i < 4; ++i) {
         const float *v = &CUBE_VERTICES[CUBE_INDICES[d * 6 + i] * 3];
@@ -73,16 +78,7 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d) {
         p->vertices[p->mesh_counter++] = TEX_UV[i * 2];
         p->vertices[p->mesh_counter++] = TEX_UV[i * 2 + 1];
 
-        if(y == CHUNK_SIZE_Y - 1) {
-            if(d == TOP) p->vertices[p->mesh_counter++] = 1;
-            else if(d == BOTTOM) p->vertices[p->mesh_counter++] = 2;
-            else p->vertices[p->mesh_counter++] = 0;
-        } else if(y == CHUNK_SIZE_Y - 2) {
-            p->vertices[p->mesh_counter++] = 2;
-        } else {
-            p->vertices[p->mesh_counter++] = 3;
-        }
-        
+        p->vertices[p->mesh_counter++] = BLOCKS[block_id].get_texture_face(d);
     }
 
     // emit indices
@@ -111,6 +107,7 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
 
 void prepare_chunk(chunk_t *p) {
     uint8_t *d = p->data;
+
     p->mesh_counter = 0;
     p->index_count  = 0;
     p->vertex_count = 0;
@@ -118,17 +115,17 @@ void prepare_chunk(chunk_t *p) {
     for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
         for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
             for(int x = 0; x < CHUNK_SIZE_X; ++x) {
-                if(*d == 0) {
+                if(*d == BLOCK_AIR) {
                     ++d;
                     continue;
                 }
 
-                if(!get_chunk_block(p, x, y, -z + 1)) emit_face(p, x, y, -z, 0);
-                if(!get_chunk_block(p, x, y, -z - 1)) emit_face(p, x, y, -z, 1);
-                if(!get_chunk_block(p, x + 1, y, -z)) emit_face(p, x, y, -z, 2);
-                if(!get_chunk_block(p, x - 1, y, -z)) emit_face(p, x, y, -z, 3);
-                if(!get_chunk_block(p, x, y + 1, -z)) emit_face(p, x, y, -z, 4);
-                if(!get_chunk_block(p, x, y - 1, -z)) emit_face(p, x, y, -z, 5);
+                if(!get_chunk_block(p, x, y, -z + 1)) emit_face(p, x, y, -z, 0, *d);
+                if(!get_chunk_block(p, x, y, -z - 1)) emit_face(p, x, y, -z, 1, *d);
+                if(!get_chunk_block(p, x + 1, y, -z)) emit_face(p, x, y, -z, 2, *d);
+                if(!get_chunk_block(p, x - 1, y, -z)) emit_face(p, x, y, -z, 3, *d);
+                if(!get_chunk_block(p, x, y + 1, -z)) emit_face(p, x, y, -z, 4, *d);
+                if(!get_chunk_block(p, x, y - 1, -z)) emit_face(p, x, y, -z, 5, *d);
                 ++d;
             }
         }

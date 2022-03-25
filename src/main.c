@@ -17,6 +17,7 @@
 #include "system.h"
 #include "event.h"
 
+#include "block.h"
 #include "chunk.h"
 #include "text.h"
 #include "ray.h"
@@ -74,6 +75,7 @@ const unsigned CURSOR_INDICES[] = {
 
 int main() {
     g_init();
+    blocks_init();
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEPTH_TEST);
@@ -115,7 +117,7 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = { 8, 19, -8 };
+    vec3f pos = { 8, 7.5, -8 };
     vec3f vel = { 0.f, 0.f, 0.f };
 
     vec2f rot = { 0.f, 0.f };
@@ -173,8 +175,18 @@ int main() {
 
     text_set(text, "MineTest OpenGL");
 
+    text_t *block_text = text_make(font);
+    if(!block_text) {
+        fprintf(stderr, "Error making block text\n");
+        return 1;
+    }
+
+    text_set(block_text, "Block: Grass");
+
     mat4_t cursor_i = mat4_identity();
     mat4_t ui_projection = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
+
+    mat4_t text_m = mat4_identity();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
@@ -191,6 +203,7 @@ int main() {
     clock_gettime(CLOCK_REALTIME, &delay_time);
 
     raydata_t ray;
+    uint8_t current_block = BLOCK_GRASS;
 
     // event loop
     event_t event;
@@ -203,6 +216,21 @@ int main() {
 
             if(event.type == EVENT_KEY_PRESS) {
                 char key = event.eventkey.key;
+
+                if(key >= '0' && key <= '9') {
+                    uint8_t id = key - '0';
+
+                    if(id > BLOCK_MAX_ID) break;
+                    else {
+                        char s[32];
+                        snprintf(s, 32, "Block: %s", block_name_from_id(id));
+
+                        text_set(block_text, s);
+
+                        current_block = id;
+                        break;
+                    }
+                }
 
                 switch(key) {
                     case 'q': done = 1; break;
@@ -233,14 +261,14 @@ int main() {
             } else if(event.type == EVENT_MOUSE_PRESSED) {
                 if(event.eventmouse.button == MOUSE_BUTTON_1) {
                     if(ray.valid) {
-                        set_chunk_block(chunk, ray.coord.x, ray.coord.y, ray.coord.z, 0);
+                        set_chunk_block(chunk, ray.coord.x, ray.coord.y, ray.coord.z, BLOCK_AIR);
                         prepare_chunk(chunk);
                     }
                 } else if(event.eventmouse.button == MOUSE_BUTTON_3) {
                     if(ray.valid) {
                         vec3f off = direction_to_vec3f(ray.face);
 
-                        set_chunk_block(chunk, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, 1);
+                        set_chunk_block(chunk, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, current_block);
                         prepare_chunk(chunk);
                     }
                 }
@@ -351,10 +379,19 @@ int main() {
 
         // render UI
         shader_use(text_shader);
-        shader_uniform(text_shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
         shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
 
+        text_m.m[3] = 0.f;
+        text_m.m[7] = 0.f;
+        text_m.m[11] = 0.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(text);
+
+        text_m.m[3] = 0.f;
+        text_m.m[7] = 32.f;
+        text_m.m[11] = 0.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+        text_render(block_text);
 
         g_swap_buffers();
     }
