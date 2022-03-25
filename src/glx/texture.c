@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "glx/texture.h"
 
 #include <stdio.h>
 #include <stdlib.h>

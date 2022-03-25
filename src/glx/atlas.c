@@ -1,4 +1,4 @@
-#include "atlas.h"
+#include "glx/atlas.h"
 
 #include <stdlib.h>
 #include <stdio.h>

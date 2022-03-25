@@ -11,7 +11,7 @@ add_executable(minetest src/main.c)
 target_sources(
     minetest 
     PUBLIC 
-    src/atlas.c src/ray.c src/text.c src/texture.c src/utils/font_loader.c src/chunk.c src/glx/vao.c src/glx/vbo.c src/shader.c src/system.c src/utils/img_loader.c src/math/vec.c src/math/matrix.c
+    src/glx/atlas.c src/ray.c src/text.c src/glx/texture.c src/utils/font_loader.c src/chunk.c src/glx/vao.c src/glx/vbo.c src/glx/shader.c src/system.c src/utils/img_loader.c src/math/vec.c src/math/matrix.c
 )
 target_include_directories(minetest PUBLIC include)
 target_link_libraries(minetest -lm -lGLEW -lGL -lX11)

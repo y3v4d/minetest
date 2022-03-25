@@ -3,38 +3,38 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include <GL/glew.h>
 #include <GL/glx.h>
 
 #include "glx/vao.h"
 #include "glx/vbo.h"
-#include "ray.h"
+#include "glx/shader.h"
+#include "glx/texture.h"
+#include "glx/atlas.h"
+
 #include "system.h"
-#include "shader.h"
 #include "event.h"
+
+#include "chunk.h"
+#include "text.h"
+#include "ray.h"
 
 #include "utils/img_loader.h"
 #include "utils/font_loader.h"
 
-#include "texture.h"
-
-#include "atlas.h"
-
-#include "text.h"
-
 #include "math/vec.h"
 #include "math/matrix.h"
 
-#include "chunk.h"
-
-#include <time.h>
 
 void GLAPIENTRY
 MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
-    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
+    if(type == GL_DEBUG_TYPE_ERROR) {
+        fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
+    }
 }
 
 float absf(float i) {
@@ -102,6 +102,12 @@ int main() {
         return 1;
     }
 
+    fontbmp_t *font = fontbmp_make("data/fonts/origami-mommy.fnt");
+    if(!font) {
+        fprintf(stderr, "Error loading font\n");
+        return 1;
+    }
+
     mat4_t model = mat4_identity();
     mat4_t view = mat4_identity();
     mat4_t projection = mat4_perspective(45.f, 640.f / 480.f, 0.1f, 10.f);
@@ -159,12 +165,6 @@ int main() {
 
     vao_bind(NULL);
 
-    fontbmp_t *font = fontbmp_make("data/fonts/origami-mommy.fnt");
-    if(!font) {
-        fprintf(stderr, "Error loading font\n");
-        return 1;
-    }
-
     text_t *text = text_make(font);
     if(!text) {
         fprintf(stderr, "Error making text\n");
@@ -174,13 +174,14 @@ int main() {
     text_set(text, "MineTest OpenGL");
 
     mat4_t cursor_i = mat4_identity();
-    mat4_t cursor_p = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
+    mat4_t ui_projection = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+
     glFrontFace(GL_CW);
-    glCullFace(GL_FRONT_FACE);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
+
     glLineWidth(1.f);
 
     char fps_buffer[32];
@@ -246,6 +247,7 @@ int main() {
             }
         }
 
+        // delta time
         struct timespec curr;
         clock_gettime(CLOCK_REALTIME, &curr);
 
@@ -266,6 +268,7 @@ int main() {
             delay_time = curr;
         }
 
+        // handle rotation with mouse movement
         dm_x = m_x - pm_x;
         dm_y = m_y - pm_y;
 
@@ -279,6 +282,7 @@ int main() {
         facing.y = sinf(RADIANS(rot.x));
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
 
+        // set 3d velocity
         if(move != 0) {
             // Negative sin and cos where Y rotation
             // because the camera is looking at -z by default
@@ -345,9 +349,10 @@ int main() {
             glDrawElements(GL_LINES, sizeof(HIGH_INDICES), GL_UNSIGNED_INT, (void*)0);
         }
 
+        // render UI
         shader_use(text_shader);
         shader_uniform(text_shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
-        shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, cursor_p.m);
+        shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
 
         text_render(text);
 

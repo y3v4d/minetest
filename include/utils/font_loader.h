@@ -1,7 +1,7 @@
 #ifndef __FONT_LOADER_H__
 #define __FONT_LOADER_H__
 
-#include "texture.h"
+#include "glx/texture.h"
 
 typedef struct {
     unsigned ID;
