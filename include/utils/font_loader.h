@@ -8,6 +8,9 @@ typedef struct {
 
     unsigned x, y;
     unsigned w, h;
+
+    unsigned xoff, yoff;
+    unsigned xadv;
 } charbmp_t;
 
 typedef struct {

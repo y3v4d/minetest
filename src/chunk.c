@@ -42,7 +42,7 @@ chunk_t *initialize_chunk() {
     p->data = (uint8_t*)malloc(sizeof(uint8_t) * SIZE);
 
     p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
-    p->indices = (int*)malloc(sizeof(float) * SIZE * 6 * 6);
+    p->indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
 
     memset(p->data, 1, sizeof(uint8_t) * SIZE);
 

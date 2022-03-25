@@ -85,7 +85,16 @@ fontbmp_t* fontbmp_make(const char *path) {
         found = strstr(buffer, "height");
         c->h = str_to_int(found + 7);
 
-        printf("Character %d x=%d y=%d w=%d h=%d\n", c->ID, c->x, c->y, c->w, c->h);
+        found = strstr(buffer, "xoffset");
+        c->xoff = str_to_int(found + 8);
+
+        found = strstr(buffer, "yoffset");
+        c->yoff = str_to_int(found + 8);
+
+        found = strstr(buffer, "xadvance");
+        c->xadv = str_to_int(found + 9);
+
+        printf("Character %d x=%d y=%d w=%d h=%d xoff=%d yoff=%d xadv=%d\n", c->ID, c->x, c->y, c->w, c->h, c->xoff, c->yoff, c->xadv);
     }
 
     fclose(info);
@@ -102,6 +111,9 @@ fontbmp_t* fontbmp_make(const char *path) {
     printf("Texture path: %s\n", texture_path);
 
     temp->texture = texture_make(texture_path);
+
+    texture_parameter(temp->texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    texture_parameter(temp->texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     return temp;
 }

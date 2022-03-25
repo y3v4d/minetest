@@ -20,10 +20,14 @@
 
 #include "atlas.h"
 
+#include "text.h"
+
 #include "math/vec.h"
 #include "math/matrix.h"
 
 #include "chunk.h"
+
+#include <time.h>
 
 void GLAPIENTRY
 MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
@@ -67,18 +71,6 @@ const unsigned CURSOR_INDICES[] = {
     2, 3, 0
 };
 
-const float CHAR_VERTICES[] = {
-    0.f, 0.f, 0.f, 114.f / 256.f, 1.f - (85.f / 256.f),
-    14.f, 0.f, 0.f, (114.f + 17.f) / 256.f, 1.f - (85.f / 256.f),
-    14.f, 22.f, 0.f, (114.f + 17.f) / 256.f, 1.f - (107.f / 256.f),
-    0.f, 22.f, 0.f, 114.f / 256.f, 1.f - (107.f / 256.f)
-};
-
-const unsigned CHAR_INDICES[] = {
-    0, 1, 2,
-    2, 3, 0
-};
-
 int main() {
     g_init();
 
@@ -108,14 +100,6 @@ int main() {
     if(!atlas) {
         return 1;
     }
-
-    fontbmp_t *font = fontbmp_make("data/fonts/solway.fnt");
-    if(!font) {
-        fprintf(stderr, "Error loading font\n");
-        return 1;
-    }
-
-    fontbmp_close(font);
 
     mat4_t model = mat4_identity();
     mat4_t view = mat4_identity();
@@ -176,46 +160,37 @@ int main() {
     vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(3 * sizeof(float)));
 
-    vbo_t char_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
-    vbo_t char_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
-    vao_t char_vao = vao_generate();
-
-    vao_bind(&char_vao);
-    vbo_bind(&char_vbo);
-    vbo_data(&char_vbo, sizeof(CHAR_VERTICES), CHAR_VERTICES);
-
-    vbo_bind(&char_vio);
-    vbo_data(&char_vio, sizeof(CHAR_INDICES), CHAR_INDICES);
-
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-
     vao_bind(NULL);
 
-    bmp_t *font_bmp = load_bmp("data/fonts/solway_0.bmp", 1, 0);
-    if(!font_bmp) {
-        fprintf(stderr, "Couldn't locate the font\n");
+    fontbmp_t *font = fontbmp_make("data/fonts/origami-mommy.fnt");
+    if(!font) {
+        fprintf(stderr, "Error loading font\n");
         return 1;
     }
 
-    texture_t *char_texture = texture_make("data/fonts/solway_0.bmp");
-    if(!char_texture) {
-        fprintf(stderr, "Couldn't create texture\n");
+    text_t *text = text_make(font);
+    if(!text) {
+        fprintf(stderr, "Error making text\n");
         return 1;
     }
-
-    texture_parameter(char_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    texture_parameter(char_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     vec3i tile;
 
     mat4_t cursor_i = mat4_identity();
-    mat4_t cursor_p = mat4_orthographic(0.f, 640.f, 0.f, 640.f, 0.f, 10.f);
+    mat4_t cursor_p = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
 
     shader_use(shader);
+
+    text_set(text, "MineTest OpenGL");
+
+    char fps_buffer[32];
+    struct timespec prev_time;
+
+    struct timespec delay_time;
+    clock_gettime(CLOCK_REALTIME, &delay_time);
 
     // event loop
     event_t event;
@@ -274,6 +249,26 @@ int main() {
             }
         }
 
+        struct timespec curr;
+        clock_gettime(CLOCK_REALTIME, &curr);
+
+        long curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
+        long prev_n = prev_time.tv_sec * 1000000000 + prev_time.tv_nsec;
+
+        float delta = (float)(curr_n - prev_n) / 1000000;
+        prev_time = curr;
+
+        clock_gettime(CLOCK_REALTIME, &curr);
+        curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
+        prev_n = delay_time.tv_sec * 1000000000 + delay_time.tv_nsec;
+
+        if((curr_n - prev_n) >= 500000000) {
+            snprintf(fps_buffer, 32, "FPS: %.2f", 1000.f / delta);
+            text_set(text, fps_buffer);
+
+            delay_time = curr;
+        }
+
         dm_x = m_x - pm_x;
         dm_y = m_y - pm_y;
 
@@ -286,9 +281,6 @@ int main() {
         facing.x = -sinf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
         facing.y = sinf(RADIANS(rot.x));
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
-
-        //printf("Pos (%f, %f, %f)\n", pos.x, pos.y, pos.z);
-        //printf("Facing (%f, %f, %f)\n", facing.x, facing.y, facing.z);
 
         vec3f direction = {
             (facing.x >= 0 ? 1 : -1),
@@ -408,10 +400,11 @@ int main() {
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /*model.m[3] = 0.f;
+        model.m[3] = 0.f;
         model.m[7] = 0.f;
         model.m[11] = 0.f;
 
+        shader_use(shader);
         shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, cursor_i.m);
         shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
 
@@ -438,28 +431,19 @@ int main() {
             vbo_bind(&highlight_vbo);
             vbo_bind(&highlight_vio);
             glDrawElements(GL_LINES, sizeof(HIGH_INDICES), GL_UNSIGNED_INT, (void*)0);
-        }*/
+        }
 
         shader_use(text_shader);
         shader_uniform(text_shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
         shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, cursor_p.m);
 
-        glActiveTexture(GL_TEXTURE0);
-        texture_bind(char_texture);
-
-        vao_bind(&char_vao);
-        vbo_bind(&char_vbo);
-        vbo_bind(&char_vio);
-        glDrawElements(GL_TRIANGLES, sizeof(CHAR_INDICES), GL_UNSIGNED_INT, (void*)0);
+        text_render(text);
 
         g_swap_buffers();
     }
 
-    texture_destroy(char_texture);
-
-    vbo_destroy(&cursor_vbo);
-    vbo_destroy(&cursor_vio);
-    vao_destroy(&cursor_vao);
+    text_destroy(text);
+    fontbmp_close(font);
 
     vbo_destroy(&highlight_vbo);
     vbo_destroy(&highlight_vio);
