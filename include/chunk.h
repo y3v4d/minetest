@@ -42,7 +42,7 @@ void prepare_chunk(chunk_t *p);
 void chunk_render(chunk_t *p);
 void free_chunk(chunk_t *p);
 
-uint8_t get_chunk_block(chunk_t *p, int x, int y, int z);
+uint8_t get_chunk_block(const chunk_t *p, int x, int y, int z);
 void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type);
 
 const char* direction_name(direction_e d);

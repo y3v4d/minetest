@@ -93,7 +93,7 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d) {
     p->vertex_count += 4;
 }
 
-uint8_t get_chunk_block(chunk_t *p, int x, int y, int z) {
+uint8_t get_chunk_block(const chunk_t *p, int x, int y, int z) {
     if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || -z < 0 || -z >= CHUNK_SIZE_Z) {
         return 0; // TODO replace with data from other chunk
     }

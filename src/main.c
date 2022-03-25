@@ -9,6 +9,7 @@
 
 #include "glx/vao.h"
 #include "glx/vbo.h"
+#include "ray.h"
 #include "system.h"
 #include "shader.h"
 #include "event.h"
@@ -125,10 +126,6 @@ int main() {
     float dm_y = 0.0f;
 
     int move = 0;
-    int found = 0;
-
-    vec3f check;
-    direction_e check_face;
 
     vbo_t highlight_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
     vbo_t highlight_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
@@ -174,17 +171,17 @@ int main() {
         return 1;
     }
 
-    vec3i tile;
+    text_set(text, "MineTest OpenGL");
 
     mat4_t cursor_i = mat4_identity();
     mat4_t cursor_p = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-
-    shader_use(shader);
-
-    text_set(text, "MineTest OpenGL");
+    glFrontFace(GL_CW);
+    glCullFace(GL_FRONT_FACE);
+    glEnable(GL_CULL_FACE);
+    glLineWidth(1.f);
 
     char fps_buffer[32];
     struct timespec prev_time;
@@ -192,10 +189,11 @@ int main() {
     struct timespec delay_time;
     clock_gettime(CLOCK_REALTIME, &delay_time);
 
+    raydata_t ray;
+
     // event loop
     event_t event;
     short done = 0;
-    glLineWidth(1.f);
     while(!done) {
         while(g_pending_events()) {
             g_get_event(&event);
@@ -233,16 +231,15 @@ int main() {
                 m_y = event.eventmouse.y;
             } else if(event.type == EVENT_MOUSE_PRESSED) {
                 if(event.eventmouse.button == MOUSE_BUTTON_1) {
-                    if(found) {
-                        set_chunk_block(chunk, tile.x, tile.y, tile.z, 0);
-                        found = 0;
+                    if(ray.valid) {
+                        set_chunk_block(chunk, ray.coord.x, ray.coord.y, ray.coord.z, 0);
                         prepare_chunk(chunk);
                     }
                 } else if(event.eventmouse.button == MOUSE_BUTTON_3) {
-                    if(found) {
-                        vec3f off = direction_to_vec3f(check_face);
-                        set_chunk_block(chunk, tile.x + off.x, tile.y + off.y, tile.z + off.z, 1);
-                        found = 0;
+                    if(ray.valid) {
+                        vec3f off = direction_to_vec3f(ray.face);
+
+                        set_chunk_block(chunk, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, 1);
                         prepare_chunk(chunk);
                     }
                 }
@@ -282,93 +279,6 @@ int main() {
         facing.y = sinf(RADIANS(rot.x));
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
 
-        vec3f direction = {
-            (facing.x >= 0 ? 1 : -1),
-            (facing.y >= 0 ? 1 : -1),
-            (facing.z >= 0 ? 1 : -1)
-        };
-
-        tile = (vec3i) {
-            floorf(pos.x),
-            floorf(pos.y),
-            ceilf(pos.z)
-        };
-
-        float offsetX = (direction.x >= 0 ? 1 : 0);
-        float offsetY = (direction.y >= 0 ? 1 : 0);
-        float offsetZ = (direction.z >= 0 ? 0 : -1);
-
-        float t = 0;
-
-        check = pos;
-        for(int i = 0; i < 16; ++i) {
-            vec3f distance = {
-                tile.x - check.x + offsetX,
-                tile.y - check.y + offsetY,
-                tile.z - check.z + offsetZ
-            };
-
-            distance.x /= facing.x;
-            distance.y /= facing.y;
-            distance.z /= facing.z;
-            
-            if(distance.x < distance.z) {
-                if(distance.y < distance.x) {
-                    if(facing.y < 0) {
-                        tile.y += -1;
-                        check_face = TOP;
-                    } else {
-                        tile.y += 1;
-                        check_face = BOTTOM;
-                    }
-
-                    t += distance.y;
-                } else {
-                    if(facing.x < 0) {
-                        tile.x += -1;
-                        check_face = RIGHT;
-                    } else {
-                        tile.x += 1;
-                        check_face = LEFT;
-                    }
-
-                    t += distance.x;
-                }
-            } else {
-                if(distance.y < distance.z) {
-                    if(facing.y < 0) {
-                        tile.y += -1;
-                        check_face = TOP;
-                    } else {
-                        tile.y += 1;
-                        check_face = BOTTOM;
-                    }
-
-                    t += distance.y;
-                } else {
-                    if(facing.z < 0) {
-                        check_face = FRONT;
-                        tile.z += -1;
-                    } else {
-                        check_face = BACK;
-                        tile.z += 1;
-                    }
-
-                    t += distance.z;
-                }
-            }
-
-            check.x = pos.x + facing.x * t;
-            check.y = pos.y + facing.y * t;
-            check.z = pos.z + facing.z * t;
-
-            if(get_chunk_block(chunk, tile.x, tile.y, tile.z)) {
-                found = 1;
-                //printf("Looking at (%d, %d, %d) Face: %s\n", tile.x, tile.y, tile.z, direction_name(check_face));
-                break;
-            } else found = 0;
-        }
-
         if(move != 0) {
             // Negative sin and cos where Y rotation
             // because the camera is looking at -z by default
@@ -388,6 +298,8 @@ int main() {
         pos.x += vel.x;
         pos.y += vel.y;
         pos.z += vel.z;
+
+        get_block_with_ray(chunk, &pos, &facing, &ray);
 
         g_lock_mouse();
         pm_x = 320; pm_y = 240;
@@ -420,10 +332,10 @@ int main() {
         atlas_bind(atlas);
         chunk_render(chunk);
 
-        if(found) {
-            model.m[3] = (int)tile.x;
-            model.m[7] = (int)tile.y;
-            model.m[11] = (int)tile.z;
+        if(ray.valid) {
+            model.m[3] = (int)ray.coord.x;
+            model.m[7] = (int)ray.coord.y;
+            model.m[11] = (int)ray.coord.z;
 
             shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
 
