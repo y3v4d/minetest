@@ -20,7 +20,7 @@ atlas_t* atlas_generate(const char *path, unsigned tile_w, unsigned tile_h) {
     t->tile_w = tile_w;
     t->tile_h = tile_h;
 
-    bmp_t *img = load_bmp(path);
+    bmp_t *img = load_bmp(path, 1, 1);
     if(!img) {
         fprintf(stderr, "Couldn't load texture image %s\n", path);
         return NULL;
@@ -34,21 +34,23 @@ atlas_t* atlas_generate(const char *path, unsigned tile_w, unsigned tile_h) {
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGB8, t->tile_w, t->tile_h, 9);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, t->tile_w, t->tile_h, 9);
 
     printf("Atlas tiles %d %d\n", img->width / t->tile_w, img->height / t->tile_h);
 
-    byte_t tile_buffer[t->tile_w * t->tile_h * 3];
+    const unsigned BPP = 4;
+    byte_t tile_buffer[t->tile_w * t->tile_h * BPP];
     byte_t *start = img->data;
     for(int y = 0; y < img->height / t->tile_h; ++y) {
         for(int x = 0; x < img->width / t->tile_w; ++x) {
-            start = img->data + ((y * t->tile_h * img->width) + t->tile_w * x) * 3;
+            start = img->data + ((y * t->tile_h * img->width) + t->tile_w * x) * BPP;
 
+            // flip individual images vertically
             for(int row = 0; row < t->tile_h; ++row) {
-                memcpy(tile_buffer + row * t->tile_w * 3, start + row * img->width * 3, t->tile_w * 3);
+                memcpy(tile_buffer + row * t->tile_w * BPP, start + (tile_h - 1 - row) * img->width * BPP, t->tile_w * BPP);
             }
 
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (y * (img->height / t->tile_h) + x), t->tile_w, t->tile_h, 1, GL_BGR, GL_UNSIGNED_BYTE, tile_buffer);
+            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (y * (img->height / t->tile_h) + x), t->tile_w, t->tile_h, 1, GL_BGRA, GL_UNSIGNED_BYTE, tile_buffer);
         }
     }
 

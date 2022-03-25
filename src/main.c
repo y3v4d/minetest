@@ -14,6 +14,7 @@
 #include "event.h"
 
 #include "utils/img_loader.h"
+#include "utils/font_loader.h"
 
 #include "atlas.h"
 
@@ -64,6 +65,18 @@ const unsigned CURSOR_INDICES[] = {
     2, 3, 0
 };
 
+const float CHAR_VERTICES[] = {
+    0.f, 0.f, 0.f, 114.f / 256.f, 1.f - (85.f / 256.f),
+    14.f, 0.f, 0.f, (114.f + 17.f) / 256.f, 1.f - (85.f / 256.f),
+    14.f, 22.f, 0.f, (114.f + 17.f) / 256.f, 1.f - (107.f / 256.f),
+    0.f, 22.f, 0.f, 114.f / 256.f, 1.f - (107.f / 256.f)
+};
+
+const unsigned CHAR_INDICES[] = {
+    0, 1, 2,
+    2, 3, 0
+};
+
 int main() {
     g_init();
 
@@ -83,8 +96,20 @@ int main() {
         return 1;
     }
 
+    shader_t *text_shader = make_shader("data/shaders/text");
+    if(!shader) {
+        fprintf(stderr, "Error making shader text\n");
+        return 1;
+    }
+
     atlas_t *atlas = atlas_generate("data/textures/atlas.bmp", 16, 16);
     if(!atlas) {
+        return 1;
+    }
+
+    bmp_t *font_bmp = load_bmp("data/fonts/solway_0.bmp", 1, 0);
+    if(!font_bmp) {
+        fprintf(stderr, "Couldn't locate the font\n");
         return 1;
     }
 
@@ -147,11 +172,42 @@ int main() {
     vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(3 * sizeof(float)));
 
+    vbo_t char_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
+    vbo_t char_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
+    vao_t char_vao = vao_generate();
+
+    vao_bind(&char_vao);
+    vbo_bind(&char_vbo);
+    vbo_data(&char_vbo, sizeof(CHAR_VERTICES), CHAR_VERTICES);
+
+    vbo_bind(&char_vio);
+    vbo_data(&char_vio, sizeof(CHAR_INDICES), CHAR_INDICES);
+
+    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
     vao_bind(NULL);
+
+    unsigned char_id = 0;
+    glGenTextures(1, &char_id);
+    glBindTexture(GL_TEXTURE_2D, char_id);
+
+    glPixelStoref(GL_UNPACK_ALIGNMENT, 1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font_bmp->width, font_bmp->height, 0, GL_BGRA, GL_UNSIGNED_BYTE, font_bmp->data);
+
+    free_bmp(font_bmp);
 
     vec3i tile;
 
     mat4_t cursor_i = mat4_identity();
+    mat4_t cursor_p = mat4_orthographic(0.f, 640.f, 0.f, 640.f, 0.f, 10.f);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
 
     shader_use(shader);
 
@@ -346,7 +402,7 @@ int main() {
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        model.m[3] = 0.f;
+        /*model.m[3] = 0.f;
         model.m[7] = 0.f;
         model.m[11] = 0.f;
 
@@ -376,12 +432,26 @@ int main() {
             vbo_bind(&highlight_vbo);
             vbo_bind(&highlight_vio);
             glDrawElements(GL_LINES, sizeof(HIGH_INDICES), GL_UNSIGNED_INT, (void*)0);
-        }
+        }*/
 
+        shader_use(text_shader);
+        shader_uniform(text_shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
+        shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, cursor_p.m);
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, char_id);
+
+        vao_bind(&char_vao);
+        vbo_bind(&char_vbo);
+        vbo_bind(&char_vio);
+        glDrawElements(GL_TRIANGLES, sizeof(CHAR_INDICES), GL_UNSIGNED_INT, (void*)0);
 
         g_swap_buffers();
     }
+
+    vbo_destroy(&cursor_vbo);
+    vbo_destroy(&cursor_vio);
+    vao_destroy(&cursor_vao);
 
     vbo_destroy(&highlight_vbo);
     vbo_destroy(&highlight_vio);
@@ -393,6 +463,7 @@ int main() {
 
     atlas_destroy(atlas);
     free_chunk(chunk);
+    close_shader(text_shader);
     close_shader(shader);
     g_close();
 

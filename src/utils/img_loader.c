@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-bmp_t* load_bmp(const char *path) {
+bmp_t* load_bmp(const char *path, int use_alpha, int reverse) {
     FILE *f = fopen(path, "rb");
     if(!f) {
         fprintf(stderr, "Couldn't open %s\n", path);
@@ -43,6 +43,7 @@ bmp_t* load_bmp(const char *path) {
     fread(buffer, sizeof(byte_t) * 2, 1, f);
 
     printf("BitsPerPixel: %d\n", *((short*)buffer));
+    const unsigned BPP = *((short*)buffer) / 8;
 
     fseek(f, 4, SEEK_CUR);
     fread(buffer, sizeof(byte_t) * 4, 1, f);
@@ -54,9 +55,23 @@ bmp_t* load_bmp(const char *path) {
 
     fseek(f, offset, SEEK_SET);
 
-    fread(temp->data, sizeof(byte_t) * 3, w * h, f);
+    fread(temp->data, sizeof(byte_t) * (use_alpha == 1 ? 4 : 3), w * h, f);
 
     fclose(f);
+
+    if(reverse) {
+        for(int y = 0; y < temp->height / 2; ++y) {
+            byte_t *first = temp->data + (y * temp->width) * BPP;
+            byte_t *last = temp->data + (temp->height - 1 - y) * temp->width * BPP;
+
+            for(int x = 0; x < temp->width * BPP; ++x) {
+                byte_t temp = first[x];
+                first[x] = last[x];
+                last[x] = temp;
+            }
+        }
+    }
+
     return temp;
 }
 

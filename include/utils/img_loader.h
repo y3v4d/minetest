@@ -9,7 +9,7 @@ typedef struct {
     byte_t *data;
 } bmp_t;
 
-bmp_t* load_bmp(const char *path);
+bmp_t* load_bmp(const char *path, int use_alpha, int reverse);
 void free_bmp(bmp_t *p);
 
 #endif

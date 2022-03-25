@@ -49,6 +49,15 @@ mat4_t mat4_perspective(float fov, float ratio, float near, float far) {
     };
 }
 
+mat4_t mat4_orthographic(float left, float right, float top, float bottom, float near, float far) {
+    return (mat4_t) {
+        2 / (right - left),     0.f,                0.f,                    -(right + left) / (right - left),
+        0.f,                    2 / (top - bottom), 0.f,                    -(top + bottom) / (top - bottom),
+        0.f,                    0.f,                -2.f / (far - near),    -(far + near) / (far - near),
+        0.f,                    0.f,                0.f,                    1.f
+    };
+}
+
 mat4_t mat4_translation(float x, float y, float z) {
     return (mat4_t) {
         1.f, 0.f, 0.f, x,
