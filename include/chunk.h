@@ -5,6 +5,8 @@
 #include "glx/vbo.h"
 #include "glx/vao.h"
 
+#include "math/vec.h"
+
 #define CHUNK_SIZE_X 16
 #define CHUNK_SIZE_Y 16
 #define CHUNK_SIZE_Z 16
@@ -42,5 +44,8 @@ void free_chunk(chunk_t *p);
 
 uint8_t get_chunk_block(chunk_t *p, int x, int y, int z);
 void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type);
+
+const char* direction_name(direction_e d);
+vec3f direction_to_vec3f(direction_e d);
 
 #endif

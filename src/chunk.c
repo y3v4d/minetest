@@ -158,3 +158,31 @@ void free_chunk(chunk_t *p) {
     free(p->data);
     free(p);
 }
+
+const char* direction_name(direction_e d) {
+    switch(d) {
+        case FRONT: return "FRONT";
+        case BACK: return "BACK";
+        case LEFT: return "LEFT";
+        case RIGHT: return "RIGHT";
+        case TOP: return "TOP";
+        case BOTTOM: return "BOTTOM";
+    }
+
+    return NULL;
+}
+
+vec3f direction_to_vec3f(direction_e d) {
+    vec3f temp = { 0, 0, 0 };
+
+    switch(d) {
+        case FRONT: temp.z = 1; break;
+        case BACK: temp.z = -1; break;
+        case LEFT: temp.x = -1; break;
+        case RIGHT: temp.x = 1; break;
+        case TOP: temp.y = 1; break;
+        case BOTTOM: temp.y = -1; break;
+    }
+
+    return temp;
+}

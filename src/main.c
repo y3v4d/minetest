@@ -115,6 +115,7 @@ int main() {
     int found = 0;
 
     vec3f check;
+    direction_e check_face;
 
     vbo_t highlight_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
     vbo_t highlight_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
@@ -157,7 +158,7 @@ int main() {
     // event loop
     event_t event;
     short done = 0;
-    glLineWidth(4.f);
+    glLineWidth(1.f);
     while(!done) {
         while(g_pending_events()) {
             g_get_event(&event);
@@ -179,13 +180,6 @@ int main() {
                     case 's':
                         move = -1;
                         break;
-                    case 'g':
-                        if(found) {
-                            set_chunk_block(chunk, tile.x, tile.y, tile.z, 0);
-                            found = 0;
-                            prepare_chunk(chunk);
-                        }
-                        break;
                     default: break;
                 }
             } else if(event.type == EVENT_KEY_RELEASE) {
@@ -200,6 +194,21 @@ int main() {
             } else if(event.type == EVENT_MOUSE_MOVE) {
                 m_x = event.eventmouse.x;
                 m_y = event.eventmouse.y;
+            } else if(event.type == EVENT_MOUSE_PRESSED) {
+                if(event.eventmouse.button == MOUSE_BUTTON_1) {
+                    if(found) {
+                        set_chunk_block(chunk, tile.x, tile.y, tile.z, 0);
+                        found = 0;
+                        prepare_chunk(chunk);
+                    }
+                } else if(event.eventmouse.button == MOUSE_BUTTON_3) {
+                    if(found) {
+                        vec3f off = direction_to_vec3f(check_face);
+                        set_chunk_block(chunk, tile.x + off.x, tile.y + off.y, tile.z + off.z, 1);
+                        found = 0;
+                        prepare_chunk(chunk);
+                    }
+                }
             }
         }
 
@@ -216,8 +225,8 @@ int main() {
         facing.y = sinf(RADIANS(rot.x));
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
 
-        printf("Pos (%f, %f, %f)\n", pos.x, pos.y, pos.z);
-        printf("Facing (%f, %f, %f)\n", facing.x, facing.y, facing.z);
+        //printf("Pos (%f, %f, %f)\n", pos.x, pos.y, pos.z);
+        //printf("Facing (%f, %f, %f)\n", facing.x, facing.y, facing.z);
 
         vec3f direction = {
             (facing.x >= 0 ? 1 : -1),
@@ -251,18 +260,46 @@ int main() {
             
             if(distance.x < distance.z) {
                 if(distance.y < distance.x) {
-                    tile.y += (facing.y < 0 ? -1 : 1);
+                    if(facing.y < 0) {
+                        tile.y += -1;
+                        check_face = TOP;
+                    } else {
+                        tile.y += 1;
+                        check_face = BOTTOM;
+                    }
+
                     t += distance.y;
                 } else {
-                    tile.x += (facing.x < 0 ? -1 : 1);
+                    if(facing.x < 0) {
+                        tile.x += -1;
+                        check_face = RIGHT;
+                    } else {
+                        tile.x += 1;
+                        check_face = LEFT;
+                    }
+
                     t += distance.x;
                 }
             } else {
                 if(distance.y < distance.z) {
-                    tile.y += (facing.y < 0 ? -1 : 1);
+                    if(facing.y < 0) {
+                        tile.y += -1;
+                        check_face = TOP;
+                    } else {
+                        tile.y += 1;
+                        check_face = BOTTOM;
+                    }
+
                     t += distance.y;
                 } else {
-                    tile.z += (facing.z < 0 ? -1 : 1);
+                    if(facing.z < 0) {
+                        check_face = FRONT;
+                        tile.z += -1;
+                    } else {
+                        check_face = BACK;
+                        tile.z += 1;
+                    }
+
                     t += distance.z;
                 }
             }
@@ -273,7 +310,7 @@ int main() {
 
             if(get_chunk_block(chunk, tile.x, tile.y, tile.z)) {
                 found = 1;
-                //printf("Looking at (%d, %d, %d)\n", tile.x, tile.y, tile.z);
+                //printf("Looking at (%d, %d, %d) Face: %s\n", tile.x, tile.y, tile.z, direction_name(check_face));
                 break;
             } else found = 0;
         }

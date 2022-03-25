@@ -104,7 +104,7 @@ void g_init() {
     window_attributes.colormap = XCreateColormap(display, XRootWindow(display, vi->screen), vi->visual, AllocNone);
     window_attributes.background_pixel = XBlackPixel(display, vi->screen);
     window_attributes.border_pixel = XBlackPixel(display, vi->screen);
-    window_attributes.event_mask = KeyPressMask | KeyReleaseMask | PointerMotionMask | StructureNotifyMask;
+    window_attributes.event_mask = KeyPressMask | KeyReleaseMask | PointerMotionMask | StructureNotifyMask | ButtonPressMask;
 
     // create window
     window = XCreateWindow(
@@ -210,6 +210,8 @@ int g_pending_events() {
     return XPending(display);
 }
 
+unsigned recent_button = 0;
+
 void g_get_event(event_t *event) {
     XNextEvent(display, &x_event);
 
@@ -222,6 +224,14 @@ void g_get_event(event_t *event) {
             event->type = EVENT_KEY_RELEASE;
             event->eventkey.key = XLookupKeysym(&x_event.xkey, 0);
             break;
+        case ButtonPress:
+            event->type = EVENT_MOUSE_PRESSED;
+            event->eventmouse.x = x_event.xbutton.x;
+            event->eventmouse.y = x_event.xbutton.y;
+            event->eventmouse.button = x_event.xbutton.button;
+            recent_button = x_event.xbutton.button;
+
+            break;
         case MotionNotify:
             if(mouse_warped == True) { 
                 event->type = EVENT_UNDEFINED;
@@ -230,6 +240,7 @@ void g_get_event(event_t *event) {
                 event->type = EVENT_MOUSE_MOVE;
                 event->eventmouse.x = x_event.xmotion.x;
                 event->eventmouse.y = x_event.xmotion.y;
+                event->eventmouse.button = recent_button;
             }
     
             break;
