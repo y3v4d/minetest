@@ -7,6 +7,7 @@ extern void cobble_init();
 extern void plank_init();
 extern void granit_init();
 extern void rose_init();
+extern void wood_init();
 
 void blocks_init() {
     grass_init();
@@ -16,6 +17,7 @@ void blocks_init() {
     plank_init();
     granit_init();
     rose_init();
+    wood_init();
 }
 
 block_t BLOCKS[BLOCK_MAX_ID + 1];

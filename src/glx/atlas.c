@@ -34,7 +34,7 @@ atlas_t* atlas_generate(const char *path, unsigned tile_w, unsigned tile_h) {
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, t->tile_w, t->tile_h, 9);
+    glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, t->tile_w, t->tile_h, 16);
 
     printf("Atlas tiles %d %d\n", img->width / t->tile_w, img->height / t->tile_h);
 

@@ -222,6 +222,8 @@ int main() {
     raydata_t ray;
     uint8_t current_block = BLOCK_GRASS;
 
+    bool_e lock_mouse = TRUE;
+
     // event loop
     event_t event;
     short done = 0;
@@ -251,6 +253,7 @@ int main() {
 
                 switch(key) {
                     case 'q': done = 1; break;
+                    case 'g': lock_mouse = !lock_mouse; break;
                     case 'r':
                         close_shader(shader);
                         shader = make_shader("data/shaders/main");
@@ -342,18 +345,24 @@ int main() {
             // Negative sin and cos where Y rotation
             // because the camera is looking at -z by default
             // (Y rotation responsible for the horizontal and depth movement)
-            vel.x += -sinf(RADIANS(rot.y)) * SPEED * move;
+            vel.x += -sinf(RADIANS(rot.y)) * move;
             //vel.y = facing.y * SPEED * move;
-            vel.z += -cosf(RADIANS(rot.y)) * SPEED * move;
+            vel.z += -cosf(RADIANS(rot.y)) * move;
         }
 
         if(move_h != 0) {
-            vel.x += cosf(RADIANS(rot.y)) * SPEED * move_h;
-            vel.z += -sinf(RADIANS(rot.y)) * SPEED * move_h;
+            vel.x += cosf(RADIANS(rot.y)) * move_h;
+            vel.z += -sinf(RADIANS(rot.y)) * move_h;
         }
 
         vel.y -= 0.01f; // gravity
         if(vel.y < -0.2f) vel.y = -0.2f;
+
+        {
+            vec2f n = vec2_normalize((vec2f){vel.x, vel.z});
+            vel.x = n.x * SPEED;
+            vel.z = n.y * SPEED;
+        }
 
         const float size_w = 0.3f;
         vec3f dir = {
@@ -366,6 +375,8 @@ int main() {
         if(
             get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
             get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
+            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z + size_w)) || 
+            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z - size_w)) ||
             get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
             get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
         ) {
@@ -376,6 +387,8 @@ int main() {
         if(
             get_chunk_block(chunk, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
             get_chunk_block(chunk, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
+            get_chunk_block(chunk, pos.x + size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) || 
+            get_chunk_block(chunk, pos.x - size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) ||
             get_chunk_block(chunk, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
             get_chunk_block(chunk, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
         ) {
@@ -403,20 +416,28 @@ int main() {
                 pos.y = floorf(pos.y) + 0.5f;
             }
 
-            check.y = pos.y;
+            check.y = pos.y + 0.3f;
 
             if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
+
+                printf("asdfsadas\n");
             } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
+
+                printf("asdfsadas\n");
             } else if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
+
+                printf("asdfsadas\n");
             } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
+
+                printf("asdfsadas\n");
             }
         }
 
@@ -438,11 +459,15 @@ int main() {
             text_set(looking, "Looking at - - -");
         }
 
-        g_lock_mouse();
-        pm_x = 320; pm_y = 240;
-        m_x = 320; m_y = 240;
+        if(lock_mouse) {
+            g_lock_mouse();
+            pm_x = 320; pm_y = 240;
+            m_x = 320; m_y = 240;
+        }
 
-        view = mat4_rotation_x(-rot.x);
+        view = mat4_identity();
+        view.m[11] = 0.3f;
+        view = mat4_mul_mat4(view, mat4_rotation_x(-rot.x));
         view = mat4_mul_mat4(view, mat4_rotation_y(-rot.y));
         view = mat4_mul_mat4(view, mat4_translation(-pos.x, -pos.y, -pos.z));
 

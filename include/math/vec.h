@@ -25,6 +25,9 @@ typedef struct {
     float x, y, z, w;
 } vec4f;
 
+float vec2_magnitude(vec2f v);
+vec2f vec2_normalize(vec2f v);
+
 float magnitude(vec3f v);
 vec3f normalize(vec3f v);
 

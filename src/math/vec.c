@@ -1,6 +1,17 @@
 #include "math/vec.h"
 #include <math.h>
 
+float vec2_magnitude(vec2f v) {
+    return sqrtf(v.x * v.x + v.y * v.y);
+}
+
+vec2f vec2_normalize(vec2f v) {
+    float m = vec2_magnitude(v);
+
+    if(m == 0) return (vec2f){ 0, 0 };
+    else return (vec2f) { v.x / m, v.y / m };
+}
+
 float magnitude(vec3f v) {
     return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 }
