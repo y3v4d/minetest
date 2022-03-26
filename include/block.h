@@ -10,7 +10,11 @@ typedef enum {
     BLOCK_GRASS = 1,
     BLOCK_DIRT = 2,
     BLOCK_STONE = 3,
-    BLOCK_MAX_ID = 3
+    BLOCK_COBBLE = 4,
+    BLOCK_PLANK = 5,
+    BLOCK_GRANIT = 6,
+    BLOCK_ROSE = 7,
+    BLOCK_MAX_ID = 7
 } blockid_e;
 
 typedef struct {
@@ -29,6 +33,10 @@ static inline char* block_name_from_id(uint8_t ID) {
         case BLOCK_GRASS: return "Grass";
         case BLOCK_DIRT: return "Dirt";
         case BLOCK_STONE: return "Stone";
+        case BLOCK_COBBLE: return "Cobble";
+        case BLOCK_PLANK: return "Plank";
+        case BLOCK_GRANIT: return "Granit";
+        case BLOCK_ROSE: return "Rose";
         default: return "Undefined";
     }
 }

@@ -117,7 +117,7 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = { 8, 7.5, -8 };
+    vec3f pos = { 8, 9.f, -8 };
     vec3f vel = { 0.f, 0.f, 0.f };
 
     vec2f rot = { 0.f, 0.f };
@@ -134,6 +134,7 @@ int main() {
     float dm_y = 0.0f;
 
     int move = 0;
+    int move_h = 0;
 
     vbo_t highlight_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
     vbo_t highlight_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
@@ -182,6 +183,22 @@ int main() {
     }
 
     text_set(block_text, "Block: Grass");
+
+    text_t *looking = text_make(font);
+    if(!looking) {
+        fprintf(stderr, "Error making looking text\n");
+        return 1;
+    }
+
+    text_set(looking, "Looking at");
+
+    text_t *pos_text = text_make(font);
+    if(!pos_text) {
+        fprintf(stderr, "Error making pos text\n");
+        return 1;
+    }
+
+    text_set(pos_text, "Pos");
 
     mat4_t cursor_i = mat4_identity();
     mat4_t ui_projection = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
@@ -244,6 +261,11 @@ int main() {
                     case 's':
                         move = -1;
                         break;
+                    case 'a': move_h = -1; break;
+                    case 'd': move_h = 1; break;
+                    case ' ':
+                        vel.y = 0.2f;
+                        break;
                     default: break;
                 }
             } else if(event.type == EVENT_KEY_RELEASE) {
@@ -251,6 +273,8 @@ int main() {
 
                 if(key == 'w' || key == 's') {
                     move = 0;
+                } else if(key == 'a' || key == 'd') {
+                    move_h = 0;
                 }
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
@@ -310,28 +334,109 @@ int main() {
         facing.y = sinf(RADIANS(rot.x));
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
 
+        vel.x = 0;
+        vel.z = 0;
+
         // set 3d velocity
         if(move != 0) {
             // Negative sin and cos where Y rotation
             // because the camera is looking at -z by default
             // (Y rotation responsible for the horizontal and depth movement)
-            vel.x = facing.x * SPEED * move;
-            vel.y = facing.y * SPEED * move;
-            vel.z = facing.z * SPEED * move;
-        } else {
-            vel.x = 0;
-            vel.y = 0;
-            vel.z = 0;
+            vel.x += -sinf(RADIANS(rot.y)) * SPEED * move;
+            //vel.y = facing.y * SPEED * move;
+            vel.z += -cosf(RADIANS(rot.y)) * SPEED * move;
         }
 
-        //vel.y -= 0.01f; // gravity
-        //if(vel.y < -0.1f) vel.y = -0.2f;
+        if(move_h != 0) {
+            vel.x += cosf(RADIANS(rot.y)) * SPEED * move_h;
+            vel.z += -sinf(RADIANS(rot.y)) * SPEED * move_h;
+        }
+
+        vel.y -= 0.01f; // gravity
+        if(vel.y < -0.2f) vel.y = -0.2f;
+
+        const float size_w = 0.3f;
+        vec3f dir = {
+            vel.x >= 0 ? 1 : -1,
+            0,
+            vel.z >= 0 ? 1 : -1
+        };
 
         pos.x += vel.x;
-        pos.y += vel.y;
+        if(
+            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
+            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
+            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
+            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
+        ) {
+            pos.x -= vel.x;
+        }
+
         pos.z += vel.z;
+        if(
+            get_chunk_block(chunk, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
+            get_chunk_block(chunk, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
+            get_chunk_block(chunk, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
+            get_chunk_block(chunk, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
+        ) {
+            pos.z -= vel.z;
+        }
+
+        pos.y += vel.y;
+        { // y check
+            vec3i check = {
+                .y = pos.y - 1.5f
+            };
+            bool_e fall = TRUE;
+
+            if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
+                fall = FALSE;
+            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
+                fall = FALSE;
+            } else if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
+                fall = FALSE;
+            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
+                fall = FALSE;
+            }
+
+            if(!fall) {
+                pos.y = floorf(pos.y) + 0.5f;
+            }
+
+            check.y = pos.y;
+
+            if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
+                pos.y -= vel.y;
+                vel.y = 0;
+            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
+                pos.y -= vel.y;
+                vel.y = 0;
+            } else if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
+                pos.y -= vel.y;
+                vel.y = 0;
+            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
+                pos.y -= vel.y;
+                vel.y = 0;
+            }
+        }
+
+        {
+            char buff[32];
+
+            snprintf(buff, 32, "Pos %.2f %.2f %.2f", pos.x, pos.y, pos.z);
+            text_set(pos_text, buff);
+        }
 
         get_block_with_ray(chunk, &pos, &facing, &ray);
+
+        if(ray.valid) {
+            char buff[32];
+
+            snprintf(buff, 32, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
+            text_set(looking, buff);
+        } else {
+            text_set(looking, "Looking at - - -");
+        }
 
         g_lock_mouse();
         pm_x = 320; pm_y = 240;
@@ -393,9 +498,24 @@ int main() {
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(block_text);
 
+        text_m.m[3] = 0.f;
+        text_m.m[7] = 480.f - 32.f;
+        text_m.m[11] = 0.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+        text_render(looking);
+
+        text_m.m[3] = 0.f;
+        text_m.m[7] = 480.f - 64.f;
+        text_m.m[11] = 0.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+        text_render(pos_text);
+
         g_swap_buffers();
     }
 
+    text_destroy(pos_text);
+    text_destroy(looking);
+    text_destroy(block_text);
     text_destroy(text);
     fontbmp_close(font);
 
