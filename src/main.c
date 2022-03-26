@@ -364,7 +364,7 @@ int main() {
             vel.z = n.y * SPEED;
         }
 
-        const float size_w = 0.3f;
+        const float size_w = 0.35f;
         vec3f dir = {
             vel.x >= 0 ? 1 : -1,
             0,
