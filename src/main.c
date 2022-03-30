@@ -421,23 +421,15 @@ int main() {
             if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-
-                printf("asdfsadas\n");
             } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-
-                printf("asdfsadas\n");
             } else if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-
-                printf("asdfsadas\n");
             } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-
-                printf("asdfsadas\n");
             }
         }
 

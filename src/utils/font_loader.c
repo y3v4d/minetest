@@ -94,7 +94,7 @@ fontbmp_t* fontbmp_make(const char *path) {
         found = strstr(buffer, "xadvance");
         c->xadv = str_to_int(found + 9);
 
-        printf("Character %d x=%d y=%d w=%d h=%d xoff=%d yoff=%d xadv=%d\n", c->ID, c->x, c->y, c->w, c->h, c->xoff, c->yoff, c->xadv);
+        //printf("Character %d x=%d y=%d w=%d h=%d xoff=%d yoff=%d xadv=%d\n", c->ID, c->x, c->y, c->w, c->h, c->xoff, c->yoff, c->xadv);
     }
 
     fclose(info);
