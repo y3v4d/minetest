@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/gl.h>
 
 #define MAX_TEXT_LENGTH 32
 

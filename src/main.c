@@ -6,7 +6,7 @@
 #include <time.h>
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/gl.h>
 
 #include "glx/vao.h"
 #include "glx/vbo.h"
@@ -73,8 +73,8 @@ const unsigned CURSOR_INDICES[] = {
     2, 3, 0
 };
 
-int main() {
-    g_init();
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow) {
+    g_init(hInstance);
     blocks_init();
 
     glEnable(GL_DEBUG_OUTPUT);
@@ -214,10 +214,10 @@ int main() {
     glLineWidth(1.f);
 
     char fps_buffer[32];
-    struct timespec prev_time;
+    //struct timespec prev_time;
 
-    struct timespec delay_time;
-    clock_gettime(CLOCK_REALTIME, &delay_time);
+    //struct timespec delay_time;
+    //clock_gettime(CLOCK_REALTIME, &delay_time);
 
     raydata_t ray;
     uint8_t current_block = BLOCK_GRASS;
@@ -225,10 +225,15 @@ int main() {
     bool_e lock_mouse = TRUE;
 
     // event loop
+    MSG msg = {};
     event_t event;
     short done = 0;
     while(!done) {
-        while(g_pending_events()) {
+        while(PeekMessage(&msg, w_hwnd, 0, 0, PM_REMOVE)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        /*while(g_pending_events()) {
             g_get_event(&event);
 
             dm_x = 0.0f;
@@ -300,28 +305,28 @@ int main() {
                     }
                 }
             }
-        }
+        }*/
 
         // delta time
-        struct timespec curr;
-        clock_gettime(CLOCK_REALTIME, &curr);
+        //struct timespec curr;
+        //clock_gettime(CLOCK_REALTIME, &curr);
 
-        long curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
-        long prev_n = prev_time.tv_sec * 1000000000 + prev_time.tv_nsec;
+        //long curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
+       // long prev_n = prev_time.tv_sec * 1000000000 + prev_time.tv_nsec;
 
-        float delta = (float)(curr_n - prev_n) / 1000000;
-        prev_time = curr;
+        //float delta = (float)(curr_n - prev_n) / 1000000;
+        //prev_time = curr;
 
-        clock_gettime(CLOCK_REALTIME, &curr);
-        curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
-        prev_n = delay_time.tv_sec * 1000000000 + delay_time.tv_nsec;
+        //clock_gettime(CLOCK_REALTIME, &curr);
+        //curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
+        //prev_n = delay_time.tv_sec * 1000000000 + delay_time.tv_nsec;
 
-        if((curr_n - prev_n) >= 500000000) {
-            snprintf(fps_buffer, 32, "FPS: %.2f", 1000.f / delta);
-            text_set(text, fps_buffer);
+        //if((curr_n - prev_n) >= 500000000) {
+         //   snprintf(fps_buffer, 32, "FPS: %.2f", 1000.f / delta);
+        //    text_set(text, fps_buffer);
 
-            delay_time = curr;
-        }
+        //    delay_time = curr;
+        //}
 
         // handle rotation with mouse movement
         dm_x = m_x - pm_x;

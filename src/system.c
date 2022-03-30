@@ -5,215 +5,148 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
+#include <windows.h>
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/wglext.h>
+#include <GL/gl.h>
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef HGLRC (*wglCreateContextAttribsARBProc)(HDC, HGLRC, const int*);
 
-// variables neccessary for the window
-Display *display;
-Window window;
-int screen;
-GLXContext context;
+HWND w_hwnd;
+HDC w_hdc;
+HGLRC w_context;
 
-XEvent x_event;
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
 
-Cursor xcursor;
+void g_init(HINSTANCE hInstance) {
+    const wchar_t CLASS_NAME[] = L"win32-c";
 
-// atoms
-Atom wm_delete_window;
+    WNDCLASS wc = {};
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = hInstance;
+    wc.lpszClassName = CLASS_NAME;
 
-Bool x_expose_occurred = False;
+    if(RegisterClass(&wc)  == 0) {
+        DWORD code = GetLastError();
+        fprintf(stderr, "Couldn't register class. Code %d\n", code);
 
-void g_init() {
-    // open new display connection
-    display = XOpenDisplay(NULL);
-    if(!display) {
-        printf("Failed to open X display\n");
-        exit(1);
+        return 1;
     }
 
-    int screen = XDefaultScreen(display);
+    w_hwnd = CreateWindowEx(
+        0,
+        CLASS_NAME,
+        L"MineTest Win32 OpenGL",
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        CW_USEDEFAULT, CW_USEDEFAULT, 640, 480,
+        NULL,
+        NULL,
+        hInstance,
+        NULL
+    );
 
-    // preffered visual attributes for the framebuffer
-    int visual_attribs[] = {
-        GLX_X_RENDERABLE, True,
-        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-        GLX_RENDER_TYPE, GLX_RGBA_BIT,
-        GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-        GLX_RED_SIZE, 8,
-        GLX_GREEN_SIZE, 8,
-        GLX_BLUE_SIZE, 8,
-        GLX_ALPHA_SIZE, 8,
-        GLX_DEPTH_SIZE, 24,
-        GLX_STENCIL_SIZE, 8,
-        GLX_DOUBLEBUFFER, True,
-        None
+    if(w_hwnd == NULL) {
+        DWORD code = GetLastError();
+        fprintf(stderr, "Couldn't create a window. Code: %d\n", code);
+
+        return 1;
+    }
+
+    // dummy context for quering modern context extensions
+    PIXELFORMATDESCRIPTOR pfd = {
+        sizeof(PIXELFORMATDESCRIPTOR),
+        1,
+        PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
+        PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
+        32,                   // Colordepth of the framebuffer.
+        8, 0, 8, 0, 8, 0,
+        8,
+        0,
+        0,
+        0, 0, 0, 0,
+        24,                   // Number of bits for the depthbuffer
+        8,                    // Number of bits for the stencilbuffer
+        0,                    // Number of Aux buffers in the framebuffer.
+        PFD_MAIN_PLANE,
+        0,
+        0, 0, 0
     };
 
-    printf("Getting matching framebuffer configs\n");
+    w_hdc = GetDC(w_hwnd);
 
-    int fb_count;
-    GLXFBConfig *fbc = glXChooseFBConfig(display, screen, visual_attribs, &fb_count);
-    if(!fbc) {
-        printf("Failed to retrive framebuffer config\n");
-        exit(1);
+    int format = ChoosePixelFormat(w_hdc, &pfd);
+    SetPixelFormat(w_hdc, format, &pfd);
+
+    HGLRC dummy = wglCreateContext(w_hdc);
+    wglMakeCurrent(w_hdc, dummy);
+
+    wglCreateContextAttribsARBProc wglCreateContextAttribsARB;
+    wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc)wglGetProcAddress("wglCreateContextAttribsARB");
+
+    if(!wglCreateContextAttribsARB) {
+        fprintf(stderr, "GL context >3.0 not supported\n");
+        return 1;
     }
 
-    printf("Found %d matching configs\n", fb_count);
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(dummy);
 
-    // get the best config possible (look at the amount of samples)
-    int best_samples_num = -1, best_index = -1;
-    for(int i = 0; i < fb_count; ++i) {
-        XVisualInfo *vi = glXGetVisualFromFBConfig(display, fbc[i]);
-        if(vi) {
-            int sample_buffers, samples;
+    printf("GL context >3.0 supported!\n");
 
-            glXGetFBConfigAttrib(display, fbc[i], GLX_SAMPLE_BUFFERS, &sample_buffers);
-            glXGetFBConfigAttrib(display, fbc[i], GLX_SAMPLES, &samples);
+    const int contextAttribList[] = {
+        WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+        WGL_CONTEXT_MINOR_VERSION_ARB, 0,
+        WGL_CONTEXT_FLAGS_ARB, 0,
+        0
+    };
 
-            printf("Matching framebuffer config %d, visual ID %ld: SAMPLE_BUFFERS = %d, SAMPLES = %d\n", i, vi->visualid, sample_buffers, samples);
+    w_context = wglCreateContextAttribsARB(w_hdc, 0, contextAttribList);
 
-            if(sample_buffers && samples > best_samples_num) {
-                best_index = i;
-                best_samples_num = samples;
-            }
-        }
-
-        XFree(vi);
-    }
-
-    GLXFBConfig best_fb = fbc[best_index];
-    XFree(fbc);
-
-    // get visual info from the framebuffer config
-    XVisualInfo *vi = glXGetVisualFromFBConfig(display, best_fb);
-    if(!vi) {
-        printf("Couldn't get visual info from framebuffer config\n");
-        exit(1);
-    }
-
-    printf("Chosen visual ID %ld\n", vi->visualid);
-
-    // set window attributes
-    XSetWindowAttributes window_attributes;
-    window_attributes.colormap = XCreateColormap(display, XRootWindow(display, vi->screen), vi->visual, AllocNone);
-    window_attributes.background_pixel = XBlackPixel(display, vi->screen);
-    window_attributes.border_pixel = XBlackPixel(display, vi->screen);
-    window_attributes.event_mask = KeyPressMask | KeyReleaseMask | PointerMotionMask | StructureNotifyMask | ButtonPressMask;
-
-    // create window
-    window = XCreateWindow(
-            display,                                                    // display
-            XRootWindow(display, vi->screen),                           // root window
-            0, 0,                                                       // window position
-            WINDOW_WIDTH, WINDOW_HEIGHT,                                // window size
-            0,                                                          // border size
-            vi->depth,                                                  // depth
-            InputOutput,                                                // window flags
-            vi->visual,                                                 // visual
-            CWBackPixel | CWBorderPixel | CWColormap | CWEventMask,     // attributes flags
-            &window_attributes                                          // window attributes
-    );
-    if(!window) {
-        printf("Failed to create X window\n");
-        exit(1);
-    }
-
-    XStoreName(display, window, "MineTest - X11 OpenGL 4.x");
-
-    // free visual info
-    XFree(vi);
-
-    // setup WM_DELETE_WINDOW atom
-    wm_delete_window = XInternAtom(display, "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(display, window, &wm_delete_window, 1);
-
-    // setup WM_CLASS
-    XClassHint *class_hint = XAllocClassHint();
-
-    class_hint->res_name = "Minetest";
-    class_hint->res_class = "minetest";
-
-    XSetClassHint(display, window, class_hint);
-
-    // show window
-    XMapWindow(display, window);
-
-    // get ARB function to create modern opengl context in x11
-    glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte*)"glXCreateContextAttribsARB");
-
-    // create opengl context
-    GLXContext context = 0;
-    if(!glXCreateContextAttribsARB) {
-        printf("Can't create modern OpenGL context, not supported\n");
-        exit(1);
-    } else {
-        int context_attribs[] = {
-            GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-            GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-            None
-        };
-
-        context = glXCreateContextAttribsARB(display, best_fb, 0, True, context_attribs);
-        if(!context) {
-            printf("Can't create modern OpenGL context\n");
-            exit(1);
-        }
-    }
-
-    // make newly created opengl context current
-    glXMakeCurrent(display, window, context);
+    wglMakeCurrent(w_hdc, w_context);
 
     // start glew
     glewExperimental = GL_TRUE;
-    glewInit();
+    int glew_code = glewInit();
+    if(glew_code != GLEW_OK) {
+        fprintf(stderr, "glewInit error: %s\n", glewGetErrorString(glew_code));
+        return 1;
+    }
+
+    const GLubyte *version = glGetString(GL_VERSION);
+    printf("OpenGL version: %s\n", version);
 
     // make invisible cursor (junky ass shit)
-    Pixmap cursor_pixmap = XCreateBitmapFromData(display, window, (const char[]){ 0 }, 1, 1);
-    XColor color = {
-        .flags = 0
-    };
-    XQueryColor(display, XDefaultColormap(display, screen), &color);
-    xcursor = XCreatePixmapCursor(display, cursor_pixmap, cursor_pixmap, &color, &color, 0, 0);
-
-    XDefineCursor(display, window, xcursor);
-    XFreePixmap(display, cursor_pixmap);
 }
 
-Bool mouse_warped = False;
+//Bool mouse_warped = False;
 void g_lock_mouse() {
-    XWarpPointer(display, None, window, 0, 0, 0, 0, 320, 240);
-    mouse_warped = True;
+    //XWarpPointer(display, None, window, 0, 0, 0, 0, 320, 240);
+    //mouse_warped = True;
 }
 
 void g_swap_buffers() {
-    glXSwapBuffers(display, window);
+    SwapBuffers(w_hdc);
 }
 
 void g_close() {
     //XFreeCursor(display, xcursor);
 
-    glXMakeCurrent(display, 0, 0);
-    glXDestroyContext(display, context);
-
-    XDestroyWindow(display, window);
-    XCloseDisplay(display);
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(w_context);
 }
 
 int g_pending_events() {
-    return XPending(display);
+    return 0;
+    //return XPending(display);
 }
 
 unsigned recent_button = 0;
 
 void g_get_event(event_t *event) {
-    XNextEvent(display, &x_event);
+    /*XNextEvent(display, &x_event);
 
     switch(x_event.type) {
         case KeyPress:
@@ -253,5 +186,7 @@ void g_get_event(event_t *event) {
             }
             break;
         default: event->type = EVENT_UNDEFINED; break;
-    }
+    }*/
+
+    event->type = EVENT_UNDEFINED;
 }

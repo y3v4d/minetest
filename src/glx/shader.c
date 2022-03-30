@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/gl.h>
 
 char* load_file(const char *path) {
     FILE *f = fopen(path, "rb");

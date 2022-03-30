@@ -15,4 +15,4 @@ target_sources(minetest PUBLIC src/glx/atlas.c src/glx/texture.c src/glx/vao.c s
 target_sources(minetest PUBLIC src/blocks/wood.c src/blocks/rose.c src/blocks/granit.c src/blocks/plank.c src/blocks/cobble.c src/blocks/dirt.c src/blocks/grass.c src/blocks/stone.c)
 
 target_include_directories(minetest PUBLIC include)
-target_link_libraries(minetest -lm -lGLEW -lGL -lX11)
+target_link_libraries(minetest -lopengl32 -lglew32 -lkernel32 -luser32 -lgdi32 -lws2_32)

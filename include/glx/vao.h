@@ -2,7 +2,7 @@
 #define __VAO_H__
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/gl.h>
 
 typedef struct {
     GLuint ID;

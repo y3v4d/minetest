@@ -2,7 +2,7 @@
 #define __VBO_H__
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/gl.h>
 
 typedef enum { FALSE, TRUE } bool_e;
 

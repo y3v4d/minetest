@@ -6,7 +6,7 @@
 #include "utils/img_loader.h"
 
 #include <GL/glew.h>
-#include <GL/glx.h>
+#include <GL/gl.h>
 
 typedef unsigned char byte_t;
 
