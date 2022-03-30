@@ -229,9 +229,76 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     event_t event;
     short done = 0;
     while(!done) {
-        while(PeekMessage(&msg, w_hwnd, 0, 0, PM_REMOVE)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+        while(g_check_event(&event)) {
+            dm_x = 0.0f;
+
+            if(event.type == EVENT_KEY_PRESS) {
+                char key = event.eventkey.key;
+
+                if(key >= '0' && key <= '9') {
+                    uint8_t id = key - '0';
+
+                    if(id > BLOCK_MAX_ID) break;
+                    else {
+                        char s[32];
+                        snprintf(s, 32, "Block: %s", block_name_from_id(id));
+
+                        text_set(block_text, s);
+
+                        current_block = id;
+                        break;
+                    }
+                }
+
+                switch(key) {
+                    case 'Q': done = 1; break;
+                    case 'G': lock_mouse = !lock_mouse; break;
+                    case 'R':
+                        close_shader(shader);
+                        shader = make_shader("data/shaders/main");
+                        break;
+                    case 'W':
+                        move = 1;
+                        break;
+                    case 'S':
+                        move = -1;
+                        break;
+                    case 'A': move_h = -1; break;
+                    case 'D': move_h = 1; break;
+                    case ' ':
+                        vel.y = 0.2f;
+                        break;
+                    default: break;
+                }
+            } else if(event.type == EVENT_KEY_RELEASE) {
+                char key = event.eventkey.key;
+
+                if(key == 'W' || key == 'S') {
+                    move = 0;
+                } else if(key == 'A' || key == 'D') {
+                    move_h = 0;
+                }
+            } else if(event.type == EVENT_MOUSE_MOVE) {
+                m_x = event.eventmouse.x;
+                m_y = event.eventmouse.y;
+            } else if(event.type == EVENT_MOUSE_PRESSED) {
+                if(event.eventmouse.button == MOUSE_BUTTON_1) {
+                    if(ray.valid) {
+                        set_chunk_block(chunk, ray.coord.x, ray.coord.y, ray.coord.z, BLOCK_AIR);
+                        prepare_chunk(chunk);
+                    }
+                } else if(event.eventmouse.button == MOUSE_BUTTON_3) {
+                    if(ray.valid) {
+                        vec3f off = direction_to_vec3f(ray.face);
+
+                        set_chunk_block(chunk, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, current_block);
+                        prepare_chunk(chunk);
+                    }
+                }
+            } else if(event.type == EVENT_WINDOW_CLOSE) {
+                done = 1;
+                break;
+            }
         }
         /*while(g_pending_events()) {
             g_get_event(&event);
@@ -468,6 +535,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             g_lock_mouse();
             pm_x = 320; pm_y = 240;
             m_x = 320; m_y = 240;
+        } else {
+            pm_x = m_x;
+            pm_y = m_y;
         }
 
         view = mat4_identity();

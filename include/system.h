@@ -10,6 +10,8 @@ void g_close();
 
 void g_swap_buffers();
 
+int g_check_event(event_t *event);
+
 int g_pending_events();
 void g_get_event(event_t *event);
 

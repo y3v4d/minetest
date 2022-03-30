@@ -1,3 +1,7 @@
+#ifndef UNICODE
+#define UNICODE
+#endif
+
 #include "system.h"
 #include "constants.h"
 
@@ -6,6 +10,7 @@
 #include <string.h>
 
 #include <windows.h>
+#include <windowsx.h>
 
 #include <GL/glew.h>
 #include <GL/wglext.h>
@@ -17,7 +22,16 @@ HWND w_hwnd;
 HDC w_hdc;
 HGLRC w_context;
 
+int should_destroy = 0;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch(uMsg) {
+        case WM_DESTROY:
+            printf("WM_DESTROY\n");
+            should_destroy = 1;
+            PostQuitMessage(0);
+            return 0;
+    }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
@@ -118,11 +132,17 @@ void g_init(HINSTANCE hInstance) {
     const GLubyte *version = glGetString(GL_VERSION);
     printf("OpenGL version: %s\n", version);
 
-    // make invisible cursor (junky ass shit)
+    ShowCursor(FALSE);
 }
 
 //Bool mouse_warped = False;
 void g_lock_mouse() {
+    POINT p = {
+        .x = 320,
+        .y = 240
+    };
+    ClientToScreen(w_hwnd, &p);
+    SetCursorPos(p.x, p.y);
     //XWarpPointer(display, None, window, 0, 0, 0, 0, 320, 240);
     //mouse_warped = True;
 }
@@ -138,12 +158,61 @@ void g_close() {
     wglDeleteContext(w_context);
 }
 
+MSG w_msg = {};
+int recent_button = -1;
+int g_check_event(event_t *event) {
+    if(should_destroy) {
+        event->type = EVENT_WINDOW_CLOSE;
+        return 1;
+    }
+
+    if(PeekMessage(&w_msg, w_hwnd, 0, 0, PM_REMOVE)) {
+        switch(w_msg.message) {
+            case WM_KEYDOWN:
+                event->type = EVENT_KEY_PRESS;
+                event->eventkey.key = w_msg.wParam;
+                break;
+            case WM_KEYUP:
+                event->type = EVENT_KEY_RELEASE;
+                event->eventkey.key = w_msg.wParam;
+                break;
+            case WM_MOUSEMOVE:
+                event->type = EVENT_MOUSE_MOVE;
+                event->eventmouse.x = GET_X_LPARAM(w_msg.lParam);
+                event->eventmouse.y = GET_Y_LPARAM(w_msg.lParam);
+                event->eventmouse.button = recent_button;
+                break;
+            case WM_LBUTTONDOWN:
+                event->type = EVENT_MOUSE_PRESSED;
+                event->eventmouse.x = GET_X_LPARAM(w_msg.lParam);
+                event->eventmouse.y = GET_Y_LPARAM(w_msg.lParam);
+                event->eventmouse.button = MOUSE_BUTTON_1;
+                recent_button = MOUSE_BUTTON_1;
+                break;
+            case WM_RBUTTONDOWN:
+                event->type = EVENT_MOUSE_PRESSED;
+                event->eventmouse.x = GET_X_LPARAM(w_msg.lParam);
+                event->eventmouse.y = GET_Y_LPARAM(w_msg.lParam);
+                event->eventmouse.button = MOUSE_BUTTON_3;
+                recent_button = MOUSE_BUTTON_3;
+                break;
+            default:
+                break;
+        }
+
+        TranslateMessage(&w_msg);
+        DispatchMessage(&w_msg);
+
+        return 1;
+    }
+
+    return 0;
+}
+
 int g_pending_events() {
     return 0;
     //return XPending(display);
 }
-
-unsigned recent_button = 0;
 
 void g_get_event(event_t *event) {
     /*XNextEvent(display, &x_event);

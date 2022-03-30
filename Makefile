@@ -1,10 +1,10 @@
 .PHONY: cmake compile run
 
 cmake:
-	cmake -B build
+	cmake -B build -G "MinGW Makefiles"
 
 compile:
-	make -C build
+	mingw32-make -C build
 
 run:
-	./build/minetest
+	./build/minetest.exe
