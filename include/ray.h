@@ -2,7 +2,7 @@
 #define __RAY_H__
 
 #include <math/vec.h>
-#include <chunk.h>
+#include "world.h"
 
 typedef struct {
     vec3i coord;
@@ -11,6 +11,6 @@ typedef struct {
     int valid;
 } raydata_t;
 
-void get_block_with_ray(const chunk_t *chunk, const vec3f *pos, const vec3f *facing, raydata_t *output);
+void get_block_with_ray(const world_t *w, const vec3f *pos, const vec3f *facing, raydata_t *output);
 
 #endif

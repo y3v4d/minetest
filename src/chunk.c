@@ -1,5 +1,6 @@
 #include "chunk.h"
 #include "block.h"
+#include "math/matrix.h"
 
 #include "glx/vao.h"
 #include "glx/vbo.h"
@@ -36,9 +37,12 @@ const float TEX_UV[] = {
     0.f,    0.f     // 3 - left bottom
 };
 
-chunk_t *initialize_chunk() {
+chunk_t *initialize_chunk(int x, int z) {
     chunk_t *p = (chunk_t*)malloc(sizeof(chunk_t));
     memset(p, 0, sizeof(chunk_t));
+
+    p->x = x;
+    p->z = z;
 
     const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
     p->data = (uint8_t*)malloc(sizeof(uint8_t) * SIZE);
@@ -137,7 +141,10 @@ void prepare_chunk(chunk_t *p) {
     vbo_data(&p->vio, p->index_count * sizeof(GLuint), p->indices);
 }
 
-void chunk_render(chunk_t *p) {
+void chunk_render(chunk_t *p, shader_t *s) {
+    mat4_t model = mat4_translation(p->x * CHUNK_SIZE_X, 0, p->z * CHUNK_SIZE_Z);
+    shader_uniform(s, "model", UNIFORM_MATRIX_4, 1, model.m);
+
     vao_bind(&p->vao);
     glDrawElements(GL_TRIANGLES, p->index_count, GL_UNSIGNED_INT, (void*)0);
 }

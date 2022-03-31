@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "glx/vbo.h"
 #include "glx/vao.h"
+#include "glx/shader.h"
 
 #include "math/vec.h"
 #include "constants.h"
@@ -13,6 +14,8 @@
 #define CHUNK_SIZE_Z 16
 
 typedef struct _chunk_s {
+    int x, z; // position in chunks
+
     // ONE VERTEX DATA
     // x y z u v layer
     float *vertices;
@@ -29,9 +32,9 @@ typedef struct _chunk_s {
     uint8_t *data;
 } chunk_t;
 
-chunk_t *initialize_chunk();
+chunk_t *initialize_chunk(int x, int z);
 void prepare_chunk(chunk_t *p);
-void chunk_render(chunk_t *p);
+void chunk_render(chunk_t *p, shader_t *s);
 void free_chunk(chunk_t *p);
 
 uint8_t get_chunk_block(const chunk_t *p, int x, int y, int z);

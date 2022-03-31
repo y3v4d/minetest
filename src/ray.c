@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-void get_block_with_ray(const chunk_t *chunk, const vec3f *pos, const vec3f *facing, raydata_t *output) {
+void get_block_with_ray(const world_t *w, const vec3f *pos, const vec3f *facing, raydata_t *output) {
     output->coord = (vec3i) {
         floorf(pos->x),
         floorf(pos->y),
@@ -80,7 +80,7 @@ void get_block_with_ray(const chunk_t *chunk, const vec3f *pos, const vec3f *fac
         check.y = pos->y + facing->y * t;
         check.z = pos->z + facing->z * t;
 
-        if(get_chunk_block(chunk, output->coord.x, output->coord.y, output->coord.z)) {
+        if(world_get_block(w, output->coord.x, output->coord.y, output->coord.z)) {
             output->valid = 1;
             break;
         }

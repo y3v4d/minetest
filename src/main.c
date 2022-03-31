@@ -28,6 +28,8 @@
 #include "math/vec.h"
 #include "math/matrix.h"
 
+#include "world.h"
+
 
 void GLAPIENTRY
 MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
@@ -84,8 +86,11 @@ int main() {
     const GLubyte *version = glGetString(GL_VERSION);
     printf("OpenGL version: %s\n", version);
 
-    chunk_t *chunk = initialize_chunk();
-    prepare_chunk(chunk);
+    world_t *world = world_init();
+    if(!world) {
+        fprintf(stderr, "Error creating world\n");
+        return 1;
+    }
 
     shader_t *shader = make_shader("data/shaders/main");
     if(!shader) {
@@ -288,15 +293,13 @@ int main() {
             } else if(event.type == EVENT_MOUSE_PRESSED) {
                 if(event.eventmouse.button == MOUSE_BUTTON_1) {
                     if(ray.valid) {
-                        set_chunk_block(chunk, ray.coord.x, ray.coord.y, ray.coord.z, BLOCK_AIR);
-                        prepare_chunk(chunk);
+                        world_set_block(world, ray.coord.x, ray.coord.y, ray.coord.z, BLOCK_AIR);
                     }
                 } else if(event.eventmouse.button == MOUSE_BUTTON_3) {
                     if(ray.valid) {
                         vec3f off = direction_to_vec3f(ray.face);
 
-                        set_chunk_block(chunk, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, current_block);
-                        prepare_chunk(chunk);
+                        world_set_block(world, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, current_block);
                     }
                 }
             }
@@ -373,24 +376,24 @@ int main() {
 
         pos.x += vel.x;
         if(
-            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
-            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
-            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z + size_w)) || 
-            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z - size_w)) ||
-            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
-            get_chunk_block(chunk, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
+            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
+            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
+            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z + size_w)) || 
+            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z - size_w)) ||
+            world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
+            world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
         ) {
             pos.x -= vel.x;
         }
 
         pos.z += vel.z;
         if(
-            get_chunk_block(chunk, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
-            get_chunk_block(chunk, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
-            get_chunk_block(chunk, pos.x + size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) || 
-            get_chunk_block(chunk, pos.x - size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) ||
-            get_chunk_block(chunk, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
-            get_chunk_block(chunk, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
+            world_get_block(world, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
+            world_get_block(world, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
+            world_get_block(world, pos.x + size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) || 
+            world_get_block(world, pos.x - size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) ||
+            world_get_block(world, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
+            world_get_block(world, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
         ) {
             pos.z -= vel.z;
         }
@@ -402,32 +405,33 @@ int main() {
             };
             bool_e fall = TRUE;
 
-            if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
+            if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
                 fall = FALSE;
-            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
+            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
                 fall = FALSE;
-            } else if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
+            } else if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
                 fall = FALSE;
-            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
+            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
                 fall = FALSE;
             }
 
             if(!fall) {
                 pos.y = floorf(pos.y) + 0.5f;
+                vel.y = 0;
             }
 
             check.y = pos.y + 0.3f;
 
-            if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
+            if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
+            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-            } else if(get_chunk_block(chunk, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
+            } else if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
-            } else if(get_chunk_block(chunk, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
+            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
                 pos.y -= vel.y;
                 vel.y = 0;
             }
@@ -440,7 +444,7 @@ int main() {
             text_set(pos_text, buff);
         }
 
-        get_block_with_ray(chunk, &pos, &facing, &ray);
+        get_block_with_ray(world, &pos, &facing, &ray);
 
         if(ray.valid) {
             char buff[32];
@@ -484,7 +488,7 @@ int main() {
         shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, projection.m);
 
         atlas_bind(atlas);
-        chunk_render(chunk);
+        world_render(world, shader);
 
         if(ray.valid) {
             model.m[3] = (int)ray.coord.x;
@@ -545,7 +549,7 @@ int main() {
     vao_destroy(&cursor_vao);
 
     atlas_destroy(atlas);
-    free_chunk(chunk);
+    world_destroy(world);
     close_shader(text_shader);
     close_shader(shader);
     g_close();
