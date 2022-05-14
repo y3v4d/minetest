@@ -29,6 +29,9 @@ Atom wm_delete_window;
 
 Bool x_expose_occurred = False;
 
+int x_last_width = -1;
+int x_last_height = -1;
+
 void g_init() {
     // open new display connection
     display = XOpenDisplay(NULL);
@@ -245,7 +248,20 @@ void g_get_event(event_t *event) {
     
             break;
         case ConfigureNotify:
-            glViewport(0, 0, x_event.xconfigure.width, x_event.xconfigure.height);
+            if(x_last_width != x_event.xconfigure.width || x_last_height != x_event.xconfigure.height) {
+                // resize happened
+                x_last_width = x_event.xconfigure.width;
+                x_last_height = x_event.xconfigure.height;
+
+                event->type = EVENT_WINDOW_RESIZE;
+                event->window.width = x_last_width;
+                event->window.height = x_last_height;
+
+                glViewport(0, 0, x_last_width, x_last_height);
+            } else {
+                event->type = EVENT_UNDEFINED;
+            }
+            
             break;
         case ClientMessage:
             if(x_event.xclient.data.l[0] == (long)wm_delete_window) {

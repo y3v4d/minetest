@@ -75,6 +75,9 @@ const unsigned CURSOR_INDICES[] = {
     2, 3, 0
 };
 
+int window_width = 640;
+int window_height = 480;
+
 int main() {
     g_init();
     blocks_init();
@@ -287,6 +290,12 @@ int main() {
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
                 done = 1;
+            } else if(event.type == EVENT_WINDOW_RESIZE) {
+                projection = mat4_perspective(60.f, (float)event.window.width / event.window.height, 0.1f, 10.f);
+                ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, 0.f, 10.f);
+
+                window_width = event.window.width;
+                window_height = event.window.height;
             } else if(event.type == EVENT_MOUSE_MOVE) {
                 m_x = event.eventmouse.x;
                 m_y = event.eventmouse.y;
@@ -520,13 +529,13 @@ int main() {
         text_render(block_text);
 
         text_m.m[3] = 0.f;
-        text_m.m[7] = 480.f - 32.f;
+        text_m.m[7] = window_height - 32.f;
         text_m.m[11] = 0.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(looking);
 
         text_m.m[3] = 0.f;
-        text_m.m[7] = 480.f - 64.f;
+        text_m.m[7] = window_height - 64.f;
         text_m.m[11] = 0.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(pos_text);

@@ -9,6 +9,7 @@
 #define EVENT_MOUSE_MOVE    0x03
 #define EVENT_MOUSE_PRESSED 0x04
 #define EVENT_WINDOW_CLOSE  0x10
+#define EVENT_WINDOW_RESIZE 0x11
 
 #define MOUSE_BUTTON_0 0x00
 #define MOUSE_BUTTON_1 0x01
@@ -26,10 +27,16 @@ typedef struct _event_key_s {
     char key;
 } eventkey_t;
 
+typedef struct _eventwindow_s {
+    unsigned type;
+    int width, height;
+} eventwindow_t;
+
 typedef union _event_s {
     unsigned type;
     eventkey_t eventkey;
     event_mouse_t eventmouse;
+    eventwindow_t window;
 } event_t;
 
 #endif
