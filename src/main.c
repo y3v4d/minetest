@@ -125,7 +125,7 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = { 8, 9.f, -8 };
+    vec3f pos = {2.5f, 7.2f, -3.5f };//{ 0.5f, 5.5f, 0.5f };//{ 8, 9.f, -8 };
     vec3f vel = { 0.f, 0.f, 0.f };
 
     vec2f rot = { 0.f, 0.f };
@@ -217,6 +217,7 @@ int main() {
     glEnable(GL_BLEND);
 
     glFrontFace(GL_CW);
+    glEnable(GL_DEPTH_CLAMP);
     //glEnable(GL_CULL_FACE);
 
     glLineWidth(1.f);
@@ -376,7 +377,7 @@ int main() {
             vel.z = n.y * SPEED;
         }
 
-        const float size_w = 0.35f;
+        const float size_w = 0.4f;
         vec3f dir = {
             vel.x >= 0 ? 1 : -1,
             0,
@@ -392,7 +393,7 @@ int main() {
             world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
             world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
         ) {
-            pos.x -= vel.x;
+            //pos.x -= vel.x;
         }
 
         pos.z += vel.z;
@@ -404,7 +405,7 @@ int main() {
             world_get_block(world, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
             world_get_block(world, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
         ) {
-            pos.z -= vel.z;
+            //pos.z -= vel.z;
         }
 
         pos.y += vel.y;
@@ -453,7 +454,15 @@ int main() {
             text_set(pos_text, buff);
         }
 
-        get_block_with_ray(world, &pos, &facing, &ray);
+        const float test = 0.8f;
+
+        const vec3f shifted_pos = (vec3f){
+            pos.x,
+            pos.y,
+            pos.z + test
+        };
+
+        get_block_with_ray(world, &shifted_pos, &facing, &ray);
 
         if(ray.valid) {
             char buff[32];
@@ -470,10 +479,13 @@ int main() {
             m_x = 320; m_y = 240;
         }
 
+        
+        
         view = mat4_identity();
-        view.m[11] = 0.3f;
+        view = mat4_mul_mat4(view, mat4_translation(0.f, 0.f, test));
         view = mat4_mul_mat4(view, mat4_rotation_x(-rot.x));
         view = mat4_mul_mat4(view, mat4_rotation_y(-rot.y));
+        view = mat4_mul_mat4(view, mat4_translation(0.f, 0.f, -test));
         view = mat4_mul_mat4(view, mat4_translation(-pos.x, -pos.y, -pos.z));
 
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
