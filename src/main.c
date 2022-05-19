@@ -62,17 +62,17 @@ const unsigned HIGH_INDICES[] = {
     0, 3, 1, 2, 4, 7, 5, 6
 };
 
-const float C_SIZE = 0.005f;
+const float C_SIZE = 2.f;
 const float CURSOR_VERTICES[] = {
-    -C_SIZE, C_SIZE, 0.f, 4.f,
-    C_SIZE, C_SIZE, 0.f, 4.f,
-    C_SIZE, -C_SIZE, 0.f, 4.f,
-    -C_SIZE, -C_SIZE, 0.f, 4.f
+    -C_SIZE, C_SIZE, 0.f, 0.f,
+    C_SIZE, C_SIZE, 0.f, 0.f,
+    C_SIZE, -C_SIZE, 0.f, 0.f,
+    -C_SIZE, -C_SIZE, 0.f, 0.f
 };
 
 const unsigned CURSOR_INDICES[] = {
-    0, 1, 2,
-    2, 3, 0
+    2, 1, 0,
+    0, 3, 2
 };
 
 int window_width = 640;
@@ -118,6 +118,12 @@ int main() {
         return 1;
     }
 
+    texture_t *dot_tex = texture_make("data/textures/dot.bmp");
+    if(!dot_tex) {
+        fprintf(stderr, "Error loading dot texture\n");
+        return 1;
+    }
+
     mat4_t model = mat4_identity();
     mat4_t view = mat4_identity();
     mat4_t projection = mat4_perspective(45.f, 640.f / 480.f, 0.1f, 10.f);
@@ -125,7 +131,7 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = {2.5f, 7.2f, -3.5f };//{ 0.5f, 5.5f, 0.5f };//{ 8, 9.f, -8 };
+    vec3f pos = { 2.5f, 7.2f, -3.5f };//{ 0.5f, 5.5f, 0.5f };//{ 8, 9.f, -8 };
     vec3f vel = { 0.f, 0.f, 0.f };
 
     vec2f rot = { 0.f, 0.f };
@@ -208,6 +214,14 @@ int main() {
 
     text_set(pos_text, "Pos");
 
+    text_t *rot_text = text_make(font);
+    if(!rot_text) {
+        fprintf(stderr, "Error making rotation text\n");
+        return 1;
+    }
+
+    text_set(rot_text, "Rot");
+
     mat4_t cursor_i = mat4_identity();
     mat4_t ui_projection = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
 
@@ -217,8 +231,11 @@ int main() {
     glEnable(GL_BLEND);
 
     glFrontFace(GL_CW);
+    glEnable(GL_CULL_FACE);
+
     glEnable(GL_DEPTH_CLAMP);
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS); 
 
     glLineWidth(1.f);
 
@@ -232,6 +249,8 @@ int main() {
     uint8_t current_block = BLOCK_GRASS;
 
     bool_e lock_mouse = TRUE;
+
+    bool_e test = TRUE;
 
     // event loop
     event_t event;
@@ -261,6 +280,7 @@ int main() {
                 }
 
                 switch(key) {
+                    case 't': test = (test ? FALSE : TRUE); break;
                     case 'q': done = 1; break;
                     case 'g': lock_mouse = !lock_mouse; break;
                     case 'r':
@@ -293,7 +313,7 @@ int main() {
                 done = 1;
             } else if(event.type == EVENT_WINDOW_RESIZE) {
                 projection = mat4_perspective(60.f, (float)event.window.width / event.window.height, 0.1f, 10.f);
-                ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, 0.f, 10.f);
+                ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, -100.f, 100.f);
 
                 window_width = event.window.width;
                 window_height = event.window.height;
@@ -346,6 +366,13 @@ int main() {
         if(rot.x > 90.f) rot.x = 90.f;
         else if(rot.x < -90.f) rot.x = -90.f;
 
+        {
+            char buff[32];
+
+            snprintf(buff, 32, "Rot %.2f %.2f", rot.x, rot.y);
+            text_set(rot_text, buff);
+        }
+
         facing.x = -sinf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
         facing.y = sinf(RADIANS(rot.x));
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
@@ -377,7 +404,7 @@ int main() {
             vel.z = n.y * SPEED;
         }
 
-        const float size_w = 0.4f;
+        const float size_w = 0.3f;
         vec3f dir = {
             vel.x >= 0 ? 1 : -1,
             0,
@@ -393,7 +420,7 @@ int main() {
             world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
             world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
         ) {
-            //pos.x -= vel.x;
+            pos.x -= vel.x;
         }
 
         pos.z += vel.z;
@@ -405,7 +432,7 @@ int main() {
             world_get_block(world, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
             world_get_block(world, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
         ) {
-            //pos.z -= vel.z;
+            pos.z -= vel.z;
         }
 
         pos.y += vel.y;
@@ -454,12 +481,10 @@ int main() {
             text_set(pos_text, buff);
         }
 
-        const float test = 0.8f;
-
         const vec3f shifted_pos = (vec3f){
             pos.x,
             pos.y,
-            pos.z + test
+            pos.z
         };
 
         get_block_with_ray(world, &shifted_pos, &facing, &ray);
@@ -478,32 +503,25 @@ int main() {
             pm_x = 320; pm_y = 240;
             m_x = 320; m_y = 240;
         }
-
-        
         
         view = mat4_identity();
-        view = mat4_mul_mat4(view, mat4_translation(0.f, 0.f, test));
-        view = mat4_mul_mat4(view, mat4_rotation_x(-rot.x));
-        view = mat4_mul_mat4(view, mat4_rotation_y(-rot.y));
-        view = mat4_mul_mat4(view, mat4_translation(0.f, 0.f, -test));
-        view = mat4_mul_mat4(view, mat4_translation(-pos.x, -pos.y, -pos.z));
+        view = mat4_mul_mat4(mat4_translation(-pos.x, -pos.y, -pos.z), view);
 
+        view = mat4_mul_mat4(mat4_rotation_y(-rot.y), view);
+        view = mat4_mul_mat4(mat4_rotation_x(-rot.x), view);
+
+        if(test) view = mat4_mul_mat4(mat4_translation(0.f, 0.f, 0.6f), view);
+        
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        glDepthFunc(GL_LESS); 
 
         model.m[3] = 0.f;
         model.m[7] = 0.f;
         model.m[11] = 0.f;
 
         shader_use(shader);
-        shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, cursor_i.m);
-        shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, cursor_i.m);
-
-        vao_bind(&cursor_vao);
-        vbo_bind(&cursor_vbo);
-        vbo_bind(&cursor_vio);
-        glDrawElements(GL_TRIANGLES, sizeof(CURSOR_INDICES), GL_UNSIGNED_INT, (void*)0);
-        
         shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
         shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, view.m);
         shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, projection.m);
@@ -525,40 +543,54 @@ int main() {
         }
 
         // render UI
+        glDepthFunc(GL_ALWAYS); 
+
         shader_use(text_shader);
         shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
 
+        text_m.m[3] = window_width / 2.f;
+        text_m.m[7] = window_height / 2.f;
+        text_m.m[11] = 0.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+
+        glActiveTexture(GL_TEXTURE0);
+        texture_bind(dot_tex);
+
+        vao_bind(&cursor_vao);
+        vbo_bind(&cursor_vbo);
+        vbo_bind(&cursor_vio);
+        glDrawElements(GL_TRIANGLES, sizeof(CURSOR_INDICES), GL_UNSIGNED_INT, (void*)0);
+
         text_m.m[3] = 0.f;
         text_m.m[7] = 0.f;
-        text_m.m[11] = 0.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(text);
 
         text_m.m[3] = 0.f;
         text_m.m[7] = 32.f;
-        text_m.m[11] = 0.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(block_text);
 
         text_m.m[3] = 0.f;
         text_m.m[7] = window_height - 32.f;
-        text_m.m[11] = 0.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(looking);
+        text_render(rot_text);
 
         text_m.m[3] = 0.f;
         text_m.m[7] = window_height - 64.f;
-        text_m.m[11] = 0.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(pos_text);
 
         g_swap_buffers();
     }
 
+    texture_destroy(dot_tex);
+
     text_destroy(pos_text);
     text_destroy(looking);
     text_destroy(block_text);
     text_destroy(text);
+    text_destroy(rot_text);
     fontbmp_close(font);
 
     vbo_destroy(&highlight_vbo);

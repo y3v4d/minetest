@@ -60,6 +60,12 @@ void text_destroy(text_t *p) {
 }
 
 void emit_character(text_t *p, char c, int *x, int *y) {
+    if(c == '\n') {
+        *x = 0;
+        *y += 32.f;
+        return;
+    }
+
     fontbmp_t *font = p->font;
     charbmp_t *found = NULL;
     for(int i = 0; i < font->count; ++i) {

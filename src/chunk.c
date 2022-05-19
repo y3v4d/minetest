@@ -50,6 +50,9 @@ chunk_t *initialize_chunk(int x, int z) {
     p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
     p->indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
 
+    //memset(p->data, BLOCK_AIR, SIZE);
+    //memset(p->data, BLOCK_DIRT, 1);
+
     memset(p->data, BLOCK_STONE, 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_DIRT, CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 5 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_GRASS, CHUNK_SIZE_X * CHUNK_SIZE_Z);
