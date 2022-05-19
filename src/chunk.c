@@ -109,7 +109,13 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
         return; // TODO replace with data from other chunk
     }
 
-    p->data[y * CHUNK_SIZE_X * CHUNK_SIZE_Z + -z * CHUNK_SIZE_X + x] = type;
+    const int coord = y * CHUNK_SIZE_X * CHUNK_SIZE_Z + -z * CHUNK_SIZE_X + x;
+
+    if(y > 0 && p->data[coord - CHUNK_SIZE_X * CHUNK_SIZE_Z] == BLOCK_GRASS) {
+        p->data[coord - CHUNK_SIZE_X * CHUNK_SIZE_Z] = BLOCK_DIRT;
+    }
+
+    p->data[coord] = type;
 }
 
 void prepare_chunk(chunk_t *p) {
