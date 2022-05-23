@@ -1,5 +1,7 @@
 #include "chunk.h"
+#include "world.h"
 #include "block.h"
+#include "constants.h"
 #include "math/matrix.h"
 
 #include "glx/vao.h"
@@ -37,9 +39,24 @@ const float TEX_UV[] = {
     0.f,    0.f     // 3 - left bottom
 };
 
-chunk_t *initialize_chunk(int x, int z) {
+vec3i dir_to_vec3i(direction_e d) {
+    switch(d) {
+        case FRONT: return (vec3i) { 0, 0, -1 };
+        case BACK: return (vec3i) { 0, 0, 1 };
+        case RIGHT: return (vec3i) { 1, 0, 0 };
+        case LEFT: return (vec3i) { -1, 0, 0 };
+        case TOP: return (vec3i) { 0, 1, 0 };
+        case BOTTOM: return (vec3i) { 0, -1, 0 };
+        default: return (vec3i) { 0, 0, 0 };
+    }
+}
+
+chunk_t *initialize_chunk(world_t *world, int x, int z) {
     chunk_t *p = (chunk_t*)malloc(sizeof(chunk_t));
     memset(p, 0, sizeof(chunk_t));
+
+    p->is_dirty = FALSE;
+    p->world = world;
 
     p->x = x;
     p->z = z;
@@ -96,6 +113,14 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d, uint8_t block_id)
     p->vertex_count += 4;
 }
 
+bool_e is_block_in_bounds(const chunk_t *p, int x, int y, int z) {
+    return x >= 0 && x < CHUNK_SIZE_X && y >= 0 && y < CHUNK_SIZE_Y && -z > 0 && -z < CHUNK_SIZE_Z;
+}
+
+bool_e is_on_boundry(const chunk_t *p, int x, int y, int z) {
+    return x == 0 || x == CHUNK_SIZE_X - 1 || -z == 0 || -z == CHUNK_SIZE_Z - 1;
+}
+
 uint8_t get_chunk_block(const chunk_t *p, int x, int y, int z) {
     if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || -z < 0 || -z >= CHUNK_SIZE_Z) {
         return 0; // TODO replace with data from other chunk
@@ -116,10 +141,33 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
     }
 
     p->data[coord] = type;
+    p->is_dirty = TRUE;
+
+    if(is_on_boundry(p, x, y, z)) {
+        chunk_t *n[2];
+        int i = 0;
+        if(x == 0) {
+            n[i++] = world_find_chunk(p->world, p->x - 1, p->z);
+        } else if(x == CHUNK_SIZE_X - 1) {
+            n[i++] = world_find_chunk(p->world, p->x + 1, p->z);
+        }
+
+        if(z == 0) {
+            n[i++] = world_find_chunk(p->world, p->x, p->z + 1);
+        } else if(-z == CHUNK_SIZE_Z - 1) {
+            n[i++] = world_find_chunk(p->world, p->x, p->z - 1);
+        }
+
+        for(int i = 0; i < 2; ++i) {
+            if(n[i] != NULL) {
+                prepare_chunk(n[i]);
+            }
+        }
+    }
 }
 
 void prepare_chunk(chunk_t *p) {
-    uint8_t *d = p->data;
+    uint8_t *b = p->data;
 
     p->mesh_counter = 0;
     p->index_count  = 0;
@@ -128,18 +176,40 @@ void prepare_chunk(chunk_t *p) {
     for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
         for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
             for(int x = 0; x < CHUNK_SIZE_X; ++x) {
-                if(*d == BLOCK_AIR) {
-                    ++d;
+                if(*b == BLOCK_AIR) {
+                    ++b;
                     continue;
                 }
 
-                if(!get_chunk_block(p, x, y, -z + 1)) emit_face(p, x, y, -z, 0, *d);
-                if(!get_chunk_block(p, x, y, -z - 1)) emit_face(p, x, y, -z, 1, *d);
-                if(!get_chunk_block(p, x + 1, y, -z)) emit_face(p, x, y, -z, 2, *d);
-                if(!get_chunk_block(p, x - 1, y, -z)) emit_face(p, x, y, -z, 3, *d);
-                if(!get_chunk_block(p, x, y + 1, -z)) emit_face(p, x, y, -z, 4, *d);
-                if(!get_chunk_block(p, x, y - 1, -z)) emit_face(p, x, y, -z, 5, *d);
-                ++d;
+                for(direction_e d = 0; d < 6; ++d) {
+                    vec3i dv = dir_to_vec3i(d);
+                    vec3i neighbor = { x + dv.x, y + dv.y, z + dv.z };
+                    vec3i wneighbor = {
+                        p->x * CHUNK_SIZE_X + x + dv.x,
+                        y + dv.y,
+                        -p->z * CHUNK_SIZE_Z + z + dv.z
+                    };
+
+                    block_t neighbor_block = BLOCKS[BLOCK_AIR];
+
+                    if(is_block_in_bounds(p, neighbor.x, neighbor.y, -neighbor.z)) {
+                        neighbor_block = BLOCKS[get_chunk_block(p, neighbor.x, neighbor.y, -neighbor.z)];
+                    } else {
+                        neighbor_block = BLOCKS[world_get_block(p->world, wneighbor.x, wneighbor.y, -wneighbor.z)];
+                    }
+
+                    if(neighbor_block.ID == BLOCK_AIR) {
+                        emit_face(p, x, y, -z, d, *b);
+                    }
+
+                    /*if(is_block_in_bounds(p, neighbor.x, neighbor.y, -neighbor.z)) {
+                        if(!get_chunk_block(p, neighbor.x, neighbor.y, -neighbor.z)) emit_face(p, x, y, -z, d, *b);
+                    } else {
+                        
+                    }*/
+                }
+
+                ++b;
             }
         }
     }

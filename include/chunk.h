@@ -13,7 +13,11 @@
 #define CHUNK_SIZE_Y 16
 #define CHUNK_SIZE_Z 16
 
+typedef struct _world_s world_t;
+
 typedef struct _chunk_s {
+    world_t *world;
+
     int x, z; // position in chunks
 
     // ONE VERTEX DATA
@@ -30,9 +34,11 @@ typedef struct _chunk_s {
     vao_t vao;
 
     uint8_t *data;
+
+    bool_e is_dirty;
 } chunk_t;
 
-chunk_t *initialize_chunk(int x, int z);
+chunk_t *initialize_chunk(world_t *world, int x, int z);
 void prepare_chunk(chunk_t *p);
 void chunk_render(chunk_t *p, shader_t *s);
 void free_chunk(chunk_t *p);
