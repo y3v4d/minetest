@@ -198,6 +198,14 @@ int main() {
 
     text_set(block_text, "Block: Grass");
 
+    text_t *mode = text_make(font);
+    if(!mode) {
+        fprintf(stderr, "Error making mode text\n");
+        return 1;
+    }
+
+    text_set(mode, "Mode: Default");
+
     text_t *looking = text_make(font);
     if(!looking) {
         fprintf(stderr, "Error making looking text\n");
@@ -251,6 +259,7 @@ int main() {
     bool_e lock_mouse = TRUE;
 
     bool_e test = TRUE;
+    bool_e free_cam = FALSE;
 
     // event loop
     event_t event;
@@ -280,6 +289,13 @@ int main() {
                 }
 
                 switch(key) {
+                    case 'f': 
+                        free_cam = !free_cam; 
+                        char s[32];
+                        snprintf(s, 32, "Mode: %s", (free_cam ? "FREE CAM" : "DEFAULT"));
+                        text_set(mode, s);
+
+                        break;
                     case 't': test = (test ? FALSE : TRUE); break;
                     case 'q': done = 1; break;
                     case 'g': lock_mouse = !lock_mouse; break;
@@ -296,7 +312,7 @@ int main() {
                     case 'a': move_h = -1; break;
                     case 'd': move_h = 1; break;
                     case ' ':
-                        vel.y = 0.2f;
+                        if(!free_cam) vel.y = 0.2f;
                         break;
                     default: break;
                 }
@@ -378,6 +394,7 @@ int main() {
         facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
 
         vel.x = 0;
+        if(free_cam) vel.y = 0;
         vel.z = 0;
 
         // set 3d velocity
@@ -386,7 +403,7 @@ int main() {
             // because the camera is looking at -z by default
             // (Y rotation responsible for the horizontal and depth movement)
             vel.x += -sinf(RADIANS(rot.y)) * move;
-            //vel.y = facing.y * SPEED * move;
+            if(free_cam) vel.y = facing.y * SPEED * move;
             vel.z += -cosf(RADIANS(rot.y)) * move;
         }
 
@@ -395,7 +412,7 @@ int main() {
             vel.z += -sinf(RADIANS(rot.y)) * move_h;
         }
 
-        vel.y -= 0.01f; // gravity
+        vel.y -= (free_cam ? 0 : 0.01f); // gravity
         if(vel.y < -0.2f) vel.y = -0.2f;
 
         {
@@ -412,31 +429,35 @@ int main() {
         };
 
         pos.x += vel.x;
-        if(
-            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
-            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
-            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z + size_w)) || 
-            world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z - size_w)) ||
-            world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
-            world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
-        ) {
-            pos.x -= vel.x;
+        if(!free_cam) {
+            if(
+                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
+                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
+                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z + size_w)) || 
+                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z - size_w)) ||
+                world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
+                world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
+            ) {
+                pos.x -= vel.x;
+            }
         }
 
         pos.z += vel.z;
-        if(
-            world_get_block(world, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
-            world_get_block(world, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
-            world_get_block(world, pos.x + size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) || 
-            world_get_block(world, pos.x - size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) ||
-            world_get_block(world, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
-            world_get_block(world, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
-        ) {
-            pos.z -= vel.z;
+        if(!free_cam) {
+            if(
+                world_get_block(world, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
+                world_get_block(world, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
+                world_get_block(world, pos.x + size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) || 
+                world_get_block(world, pos.x - size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) ||
+                world_get_block(world, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
+                world_get_block(world, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
+            ) {
+                pos.z -= vel.z;
+            }
         }
 
         pos.y += vel.y;
-        { // y check
+        if(!free_cam) { // y check
             vec3i check = {
                 .y = pos.y - 1.5f
             };
@@ -572,6 +593,11 @@ int main() {
         text_render(block_text);
 
         text_m.m[3] = 0.f;
+        text_m.m[7] = 64.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+        text_render(mode);
+
+        text_m.m[3] = 0.f;
         text_m.m[7] = window_height - 32.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(rot_text);
@@ -591,6 +617,7 @@ int main() {
     text_destroy(block_text);
     text_destroy(text);
     text_destroy(rot_text);
+    text_destroy(mode);
     fontbmp_close(font);
 
     vbo_destroy(&highlight_vbo);
