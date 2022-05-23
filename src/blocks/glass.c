@@ -1,15 +1,15 @@
 #include "block.h"
 
 static inline uint8_t get_texture_face(direction_e d) {
-    return 2;
+    return 10;
 }
 
-void dirt_init() {
+void glass_init() {
     block_t p = {
-        .ID = BLOCK_DIRT,
-        .is_transparent = FALSE,
+        .ID = BLOCK_GLASS,
+        .is_transparent = TRUE,
         .get_texture_face = get_texture_face
     };
 
-    BLOCKS[BLOCK_DIRT] = p;
+    BLOCKS[BLOCK_GLASS] = p;
 }

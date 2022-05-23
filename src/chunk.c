@@ -145,6 +145,7 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
 
     if(is_on_boundry(p, x, y, z)) {
         chunk_t *n[2];
+
         int i = 0;
         if(x == 0) {
             n[i++] = world_find_chunk(p->world, p->x - 1, p->z);
@@ -198,7 +199,7 @@ void prepare_chunk(chunk_t *p) {
                         neighbor_block = BLOCKS[world_get_block(p->world, wneighbor.x, wneighbor.y, -wneighbor.z)];
                     }
 
-                    if(neighbor_block.ID == BLOCK_AIR) {
+                    if(neighbor_block.ID == BLOCK_AIR || neighbor_block.is_transparent == TRUE) {
                         emit_face(p, x, y, -z, d, *b);
                     }
 

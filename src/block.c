@@ -6,7 +6,7 @@ extern void stone_init();
 extern void cobble_init();
 extern void plank_init();
 extern void granit_init();
-extern void rose_init();
+extern void glass_init();
 extern void wood_init();
 
 void blocks_init() {
@@ -16,7 +16,7 @@ void blocks_init() {
     cobble_init();
     plank_init();
     granit_init();
-    rose_init();
+    glass_init();
     wood_init();
 }
 

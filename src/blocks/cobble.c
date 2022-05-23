@@ -7,6 +7,7 @@ static inline uint8_t get_texture_face(direction_e d) {
 void cobble_init() {
     block_t p = {
         .ID = BLOCK_COBBLE,
+        .is_transparent = FALSE,
         .get_texture_face = get_texture_face
     };
 
