@@ -70,10 +70,25 @@ chunk_t *initialize_chunk(world_t *world, int x, int z) {
     p->t_vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
     p->t_indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
 
-    memset(p->data, BLOCK_STONE, 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    /*memset(p->data, BLOCK_STONE, 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_DIRT, CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 5 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_GRASS, CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    memset(p->data + 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_AIR, SIZE - 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);*/
+
+    memset(p->data, BLOCK_PLANK, 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_AIR, SIZE - 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
+
+    for(int y = 0; y < 6; ++y) {
+        for(int x = 0; x < CHUNK_SIZE_X; ++x) {
+            p->data[y * CHUNK_SIZE_X * CHUNK_SIZE_Z + x] = BLOCK_WOOD;
+            p->data[y * CHUNK_SIZE_X * CHUNK_SIZE_Z + 15 * CHUNK_SIZE_Z + x] = BLOCK_WOOD;
+        }
+
+        for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
+            p->data[y * CHUNK_SIZE_Z * CHUNK_SIZE_X + CHUNK_SIZE_X * z] = BLOCK_WOOD;
+            p->data[y * CHUNK_SIZE_Z * CHUNK_SIZE_X + 15 + CHUNK_SIZE_X * z] = BLOCK_WOOD;
+        }
+    }
 
     p->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
     p->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);

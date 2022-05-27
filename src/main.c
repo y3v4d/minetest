@@ -30,7 +30,6 @@
 
 #include "world.h"
 
-
 void GLAPIENTRY
 MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -131,7 +130,7 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = { 2.5f, 7.2f, -3.5f };//{ 0.5f, 5.5f, 0.5f };//{ 8, 9.f, -8 };
+    vec3f pos = { 2.5f, 7.2f, -3.5f };
     vec3f vel = { 0.f, 0.f, 0.f };
 
     vec2f rot = { 0.f, 0.f };
@@ -261,19 +260,7 @@ int main() {
     bool_e test = TRUE;
     bool_e free_cam = FALSE;
 
-    for(int y = 6; y <= 7; ++y) {
-        for(int z = -4; z >= -5; --z) {
-            for(int x = 0; x < CHUNK_SIZE_X; ++x) {
-                world_set_block(world, x, y, z, (z == -4 ? BLOCK_GLASS : BLOCK_PLANK));
-            }
-        }
-    }
-
-    for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
-        for(int x = 0; x < CHUNK_SIZE_X; ++x) {
-            world_set_block(world, x, y, -15, BLOCK_GLASS);
-        }
-    }
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // event loop
     event_t event;
@@ -620,10 +607,15 @@ int main() {
         text_m.m[3] = 0.f;
         text_m.m[7] = window_height - 32.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(rot_text);
+        text_render(looking);
 
         text_m.m[3] = 0.f;
         text_m.m[7] = window_height - 64.f;
+        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+        text_render(rot_text);
+
+        text_m.m[3] = 0.f;
+        text_m.m[7] = window_height - 96.f;
         shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
         text_render(pos_text);
 

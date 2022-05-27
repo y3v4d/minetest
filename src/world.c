@@ -47,8 +47,7 @@ world_t* world_init() {
 
     for(int z = 0; z < CHUNK_Z; ++z) {
         for(int x = 0; x < CHUNK_X; ++x) {
-            t->chunks[z * CHUNK_X + x] = initialize_chunk(t, x, -z);
-            
+            t->chunks[z * CHUNK_X + x] = initialize_chunk(t, x - 1, -z + 1);
         }
     }
 
@@ -72,7 +71,7 @@ void world_destroy(world_t *p) {
 }
 
 chunk_t* find_chunk(const world_t *w, int x, int z) {
-    if(x >= CHUNK_X || x < 0 || -z >= CHUNK_Z || -z < 0) return NULL;
+    //if(x >= CHUNK_X || x < 0 || -z >= CHUNK_Z || -z < 0) return NULL;
 
     for(int i = 0; i < CHUNK_X * CHUNK_Z; ++i) {
         if(w->chunks[i]->x == x && w->chunks[i]->z == z) return w->chunks[i];
@@ -86,7 +85,7 @@ chunk_t *world_find_chunk(const world_t *w, int x, int z) {
 }
 
 uint8_t world_get_block(const world_t *w, int x, int y, int z) {
-    int chunk_x = x / CHUNK_SIZE_X, chunk_z = z / CHUNK_SIZE_Z;
+    int chunk_x = (int)floorf((float)x / CHUNK_SIZE_X), chunk_z = (int)ceilf((float)z / CHUNK_SIZE_Z);
     int in_x = x - chunk_x * CHUNK_SIZE_X, in_z = z - chunk_z * CHUNK_SIZE_Z;
 
     chunk_t *c = find_chunk(w, chunk_x, chunk_z);
@@ -96,7 +95,7 @@ uint8_t world_get_block(const world_t *w, int x, int y, int z) {
 }
 
 void world_set_block(const world_t *w, int x, int y, int z, uint8_t type) {
-    int chunk_x = x / CHUNK_SIZE_X, chunk_z = z / CHUNK_SIZE_Z;
+    int chunk_x = (int)floorf((float)x / CHUNK_SIZE_X), chunk_z = (int)ceilf((float)z / CHUNK_SIZE_Z);
     int in_x = x - chunk_x * CHUNK_SIZE_X, in_z = z - chunk_z * CHUNK_SIZE_Z;
 
     chunk_t *c = find_chunk(w, chunk_x, chunk_z);
