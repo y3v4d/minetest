@@ -261,6 +261,20 @@ int main() {
     bool_e test = TRUE;
     bool_e free_cam = FALSE;
 
+    for(int y = 6; y <= 7; ++y) {
+        for(int z = -4; z >= -5; --z) {
+            for(int x = 0; x < CHUNK_SIZE_X; ++x) {
+                world_set_block(world, x, y, z, (z == -4 ? BLOCK_GLASS : BLOCK_PLANK));
+            }
+        }
+    }
+
+    for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
+        for(int x = 0; x < CHUNK_SIZE_X; ++x) {
+            world_set_block(world, x, y, -15, BLOCK_GLASS);
+        }
+    }
+
     // event loop
     event_t event;
     short done = 0;

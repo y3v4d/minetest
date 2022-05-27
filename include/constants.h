@@ -1,8 +1,8 @@
 #ifndef __CONSTANTS_H__
 #define __CONSTANTS_H__
 
-#define WINDOW_WIDTH 640
-#define WINDOW_HEIGHT 480
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
 
 typedef enum {
     FRONT   = 0,

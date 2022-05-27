@@ -67,6 +67,9 @@ chunk_t *initialize_chunk(world_t *world, int x, int z) {
     p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
     p->indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
 
+    p->t_vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
+    p->t_indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
+
     //memset(p->data, BLOCK_AIR, SIZE);
     //memset(p->data, BLOCK_DIRT, 1);
 
@@ -88,6 +91,19 @@ chunk_t *initialize_chunk(world_t *world, int x, int z) {
 
     vao_bind(NULL);
 
+    p->t_vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
+    p->t_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
+    p->t_vao = vao_generate();
+
+    vao_bind(&p->t_vao);
+    vbo_bind(&p->t_vbo);
+    vbo_bind(&p->t_vio);
+    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+
+    vao_bind(NULL);
+
     return p;
 }
 
@@ -96,21 +112,40 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d, uint8_t block_id)
     for(int i = 0; i < 4; ++i) {
         const float *v = &CUBE_VERTICES[CUBE_INDICES[d * 6 + i] * 3];
 
-        p->vertices[p->mesh_counter++] = x + v[0];
-        p->vertices[p->mesh_counter++] = y + v[1];
-        p->vertices[p->mesh_counter++] = z + v[2];
-        p->vertices[p->mesh_counter++] = TEX_UV[i * 2];
-        p->vertices[p->mesh_counter++] = TEX_UV[i * 2 + 1];
+        if(!BLOCKS[block_id].is_transparent) {
+            p->vertices[p->mesh_counter++] = x + v[0];
+            p->vertices[p->mesh_counter++] = y + v[1];
+            p->vertices[p->mesh_counter++] = z + v[2];
+            p->vertices[p->mesh_counter++] = TEX_UV[i * 2];
+            p->vertices[p->mesh_counter++] = TEX_UV[i * 2 + 1];
 
-        p->vertices[p->mesh_counter++] = BLOCKS[block_id].get_texture_face(d);
+            p->vertices[p->mesh_counter++] = BLOCKS[block_id].get_texture_face(d);
+        } else {
+            p->t_vertices[p->t_mesh_counter++] = x + v[0];
+            p->t_vertices[p->t_mesh_counter++] = y + v[1];
+            p->t_vertices[p->t_mesh_counter++] = z + v[2];
+            p->t_vertices[p->t_mesh_counter++] = TEX_UV[i * 2];
+            p->t_vertices[p->t_mesh_counter++] = TEX_UV[i * 2 + 1];
+
+            p->t_vertices[p->t_mesh_counter++] = BLOCKS[block_id].get_texture_face(d);
+        
+        }
     }
 
     // emit indices
     for(int i = 0; i < 6; ++i) {
-        p->indices[p->index_count++] = p->vertex_count + CUBE_INDICES[i];
+        if(!BLOCKS[block_id].is_transparent) {
+            p->indices[p->index_count++] = p->vertex_count + CUBE_INDICES[i];
+        } else {
+            p->t_indices[p->t_index_count++] = p->t_vertex_count + CUBE_INDICES[i];
+        }
     }
 
-    p->vertex_count += 4;
+    if(!BLOCKS[block_id].is_transparent) {
+        p->vertex_count += 4;
+    } else {
+        p->t_vertex_count += 4;
+    }
 }
 
 bool_e is_block_in_bounds(const chunk_t *p, int x, int y, int z) {
@@ -144,7 +179,7 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
     p->is_dirty = TRUE;
 
     if(is_on_boundry(p, x, y, z)) {
-        chunk_t *n[2];
+        chunk_t *n[2] = { NULL, NULL };
 
         int i = 0;
         if(x == 0) {
@@ -174,6 +209,10 @@ void prepare_chunk(chunk_t *p) {
     p->index_count  = 0;
     p->vertex_count = 0;
 
+    p->t_mesh_counter = 0;
+    p->t_index_count = 0;
+    p->t_vertex_count = 0;
+
     for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
         for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
             for(int x = 0; x < CHUNK_SIZE_X; ++x) {
@@ -202,12 +241,6 @@ void prepare_chunk(chunk_t *p) {
                     if(neighbor_block.ID == BLOCK_AIR || neighbor_block.is_transparent == TRUE) {
                         emit_face(p, x, y, -z, d, *b);
                     }
-
-                    /*if(is_block_in_bounds(p, neighbor.x, neighbor.y, -neighbor.z)) {
-                        if(!get_chunk_block(p, neighbor.x, neighbor.y, -neighbor.z)) emit_face(p, x, y, -z, d, *b);
-                    } else {
-                        
-                    }*/
                 }
 
                 ++b;
@@ -219,6 +252,11 @@ void prepare_chunk(chunk_t *p) {
     vbo_data(&p->vbo, p->mesh_counter * sizeof(float), p->vertices);
     vbo_bind(&p->vio);
     vbo_data(&p->vio, p->index_count * sizeof(GLuint), p->indices);
+
+    vbo_bind(&p->t_vbo);
+    vbo_data(&p->t_vbo, p->t_mesh_counter * sizeof(float), p->t_vertices);
+    vbo_bind(&p->t_vio);
+    vbo_data(&p->t_vio, p->t_index_count * sizeof(GLuint), p->t_indices);
 }
 
 void chunk_render(chunk_t *p, shader_t *s) {
@@ -227,6 +265,9 @@ void chunk_render(chunk_t *p, shader_t *s) {
 
     vao_bind(&p->vao);
     glDrawElements(GL_TRIANGLES, p->index_count, GL_UNSIGNED_INT, (void*)0);
+
+    vao_bind(&p->t_vao);
+    glDrawElements(GL_TRIANGLES, p->t_index_count, GL_UNSIGNED_INT, (void*)0);
 }
 
 void free_chunk(chunk_t *p) {
@@ -236,8 +277,15 @@ void free_chunk(chunk_t *p) {
     vbo_destroy(&p->vio);
     vao_destroy(&p->vao);
 
+    vbo_destroy(&p->t_vbo);
+    vbo_destroy(&p->t_vio);
+    vao_destroy(&p->t_vao);
+
     free(p->vertices);
     free(p->indices);
+
+    free(p->t_vertices);
+    free(p->t_indices);
 
     free(p->data);
     free(p);

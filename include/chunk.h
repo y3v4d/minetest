@@ -30,8 +30,19 @@ typedef struct _chunk_s {
 
     int mesh_counter;
 
+    float *t_vertices;
+    int t_vertex_count;
+
+    int *t_indices;
+    int t_index_count;
+
+    int t_mesh_counter;
+
     vbo_t vbo, vio;
     vao_t vao;
+
+    vbo_t t_vbo, t_vio;
+    vao_t t_vao;
 
     uint8_t *data;
 
