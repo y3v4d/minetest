@@ -426,6 +426,8 @@ int main() {
             vel.z += -sinf(RADIANS(rot.y)) * move_h;
         }
 
+        
+
         vel.y -= (free_cam ? 0 : 0.01f); // gravity
         if(vel.y < -0.2f) vel.y = -0.2f;
 
@@ -514,6 +516,10 @@ int main() {
 
             snprintf(buff, 32, "Pos %.2f %.2f %.2f", pos.x, pos.y, pos.z);
             text_set(pos_text, buff);
+        }
+
+        if(move != 0 || move_h != 0) {
+            world_sort_chunks(world, &pos);
         }
 
         const vec3f shifted_pos = (vec3f){
