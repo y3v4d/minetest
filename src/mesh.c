@@ -19,7 +19,7 @@ mesh_t* mesh_init() {
         return NULL;
     }
 
-    temp->indices = mesh_buffer_init(SIZE * 6 * 6, sizeof(int));
+    temp->indices = mesh_buffer_init(SIZE * 6 * 6, sizeof(unsigned));
     if(!temp->indices) {
         mesh_destroy(temp);
         return NULL;

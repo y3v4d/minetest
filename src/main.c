@@ -29,6 +29,7 @@
 #include "math/matrix.h"
 
 #include "direction.h"
+#include "camera.h"
 
 #include "world.h"
 
@@ -125,19 +126,18 @@ int main() {
         return 1;
     }
 
+    camera_t *camera = camera_init();
+    if(!camera) {
+        fprintf(stderr, "Couldn't create camera\n");
+        return 1;
+    }
+
     mat4_t model = mat4_identity();
-    mat4_t view = mat4_identity();
-    mat4_t projection = mat4_perspective(45.f, 640.f / 480.f, 0.1f, 10.f);
 
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f pos = { 2.5f, 7.2f, -3.5f };
     vec3f vel = { 0.f, 0.f, 0.f };
-
-    vec2f rot = { 0.f, 0.f };
-
-    vec3f facing = { 0.f, 0.f, 0.f };
 
     float m_x = 0.0f;
     float m_y = 0.0f;
@@ -331,7 +331,7 @@ int main() {
                 printf("WM_DELETE_WINDOW invoked\n");
                 done = 1;
             } else if(event.type == EVENT_WINDOW_RESIZE) {
-                projection = mat4_perspective(60.f, (float)event.window.width / event.window.height, 0.1f, 10.f);
+                //projection = mat4_perspective(60.f, (float)event.window.width / event.window.height, 0.1f, 10.f);
                 ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, -100.f, 100.f);
 
                 window_width = event.window.width;
@@ -378,22 +378,9 @@ int main() {
         dm_x = m_x - pm_x;
         dm_y = m_y - pm_y;
 
-        rot.x += (-dm_y) / 5.f;
-        rot.y += (-dm_x) / 5.f;
-
-        if(rot.x > 90.f) rot.x = 90.f;
-        else if(rot.x < -90.f) rot.x = -90.f;
-
-        {
-            char buff[32];
-
-            snprintf(buff, 32, "Rot %.2f %.2f", rot.x, rot.y);
-            text_set(rot_text, buff);
-        }
-
-        facing.x = -sinf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
-        facing.y = sinf(RADIANS(rot.x));
-        facing.z = -cosf(RADIANS(rot.y)) * cosf(RADIANS(rot.x));
+        camera->rotation.x += (-dm_y) / 5.f;
+        camera->rotation.y += (-dm_x) / 5.f;
+        camera_update(camera);
 
         vel.x = 0;
         if(free_cam) vel.y = 0;
@@ -404,14 +391,14 @@ int main() {
             // Negative sin and cos where Y rotation
             // because the camera is looking at -z by default
             // (Y rotation responsible for the horizontal and depth movement)
-            vel.x += -sinf(RADIANS(rot.y)) * move;
-            if(free_cam) vel.y = facing.y * SPEED * move;
-            vel.z += -cosf(RADIANS(rot.y)) * move;
+            vel.x += -sinf(RADIANS(camera->rotation.y)) * move;
+            if(free_cam) vel.y = camera->facing.y * SPEED * move;
+            vel.z += -cosf(RADIANS(camera->rotation.y)) * move;
         }
 
         if(move_h != 0) {
-            vel.x += cosf(RADIANS(rot.y)) * move_h;
-            vel.z += -sinf(RADIANS(rot.y)) * move_h;
+            vel.x += cosf(RADIANS(camera->rotation.y)) * move_h;
+            vel.z += -sinf(RADIANS(camera->rotation.y)) * move_h;
         }
 
         
@@ -432,91 +419,79 @@ int main() {
             vel.z >= 0 ? 1 : -1
         };
 
-        pos.x += vel.x;
+        camera->position.x += vel.x;
         if(!free_cam) {
             if(
-                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z + size_w)) || 
-                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.5f, ceilf(pos.z - size_w)) ||
-                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z + size_w)) || 
-                world_get_block(world, pos.x + size_w * dir.x, pos.y - 1.0f, ceilf(pos.z - size_w)) ||
-                world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z + size_w)) || 
-                world_get_block(world, pos.x + size_w * dir.x, pos.y, ceilf(pos.z - size_w))
+                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.5f, ceilf(camera->position.z + size_w)) || 
+                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.5f, ceilf(camera->position.z - size_w)) ||
+                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.0f, ceilf(camera->position.z + size_w)) || 
+                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.0f, ceilf(camera->position.z - size_w)) ||
+                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y, ceilf(camera->position.z + size_w)) || 
+                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y, ceilf(camera->position.z - size_w))
             ) {
-                pos.x -= vel.x;
+                camera->position.x -= vel.x;
             }
         }
 
-        pos.z += vel.z;
+        camera->position.z += vel.z;
         if(!free_cam) {
             if(
-                world_get_block(world, pos.x + size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) || 
-                world_get_block(world, pos.x - size_w, pos.y - 1.5f, ceilf(pos.z + size_w * dir.z)) ||
-                world_get_block(world, pos.x + size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) || 
-                world_get_block(world, pos.x - size_w, pos.y - 1.0f, ceilf(pos.z + size_w * dir.z)) ||
-                world_get_block(world, pos.x + size_w, pos.y, ceilf(pos.z + size_w * dir.z)) || 
-                world_get_block(world, pos.x - size_w, pos.y, ceilf(pos.z + size_w * dir.z))
+                world_get_block(world, camera->position.x + size_w, camera->position.y - 1.5f, ceilf(camera->position.z + size_w * dir.z)) || 
+                world_get_block(world, camera->position.x - size_w, camera->position.y - 1.5f, ceilf(camera->position.z + size_w * dir.z)) ||
+                world_get_block(world, camera->position.x + size_w, camera->position.y - 1.0f, ceilf(camera->position.z + size_w * dir.z)) || 
+                world_get_block(world, camera->position.x - size_w, camera->position.y - 1.0f, ceilf(camera->position.z + size_w * dir.z)) ||
+                world_get_block(world, camera->position.x + size_w, camera->position.y, ceilf(camera->position.z + size_w * dir.z)) || 
+                world_get_block(world, camera->position.x - size_w, camera->position.y, ceilf(camera->position.z + size_w * dir.z))
             ) {
-                pos.z -= vel.z;
+                camera->position.z -= vel.z;
             }
         }
 
-        pos.y += vel.y;
+        camera->position.y += vel.y;
         if(!free_cam) { // y check
             vec3i check = {
-                .y = pos.y - 1.5f
+                .y = camera->position.y - 1.5f
             };
             bool_e fall = TRUE;
 
-            if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
+            if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z + size_w))) {
                 fall = FALSE;
-            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
+            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z + size_w))) {
                 fall = FALSE;
-            } else if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
+            } else if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z - size_w))) {
                 fall = FALSE;
-            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
+            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z - size_w))) {
                 fall = FALSE;
             }
 
             if(!fall) {
-                pos.y = floorf(pos.y) + 0.5f;
+                camera->position.y = floorf(camera->position.y) + 0.5f;
                 vel.y = 0;
             }
 
-            check.y = pos.y + 0.3f;
+            check.y = camera->position.y + 0.3f;
 
-            if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z + size_w))) {
-                pos.y -= vel.y;
+            if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z + size_w))) {
+                camera->position.y -= vel.y;
                 vel.y = 0;
-            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z + size_w))) {
-                pos.y -= vel.y;
+            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z + size_w))) {
+                camera->position.y -= vel.y;
                 vel.y = 0;
-            } else if(world_get_block(world, floorf(pos.x + size_w), check.y, ceilf(pos.z - size_w))) {
-                pos.y -= vel.y;
+            } else if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z - size_w))) {
+                camera->position.y -= vel.y;
                 vel.y = 0;
-            } else if(world_get_block(world, floorf(pos.x - size_w), check.y, ceilf(pos.z - size_w))) {
-                pos.y -= vel.y;
+            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z - size_w))) {
+                camera->position.y -= vel.y;
                 vel.y = 0;
             }
-        }
-
-        {
-            char buff[32];
-
-            snprintf(buff, 32, "Pos %.2f %.2f %.2f", pos.x, pos.y, pos.z);
-            text_set(pos_text, buff);
         }
 
         if(move != 0 || move_h != 0) {
-            world_sort_chunks(world, &pos);
+            world_sort_chunks(world, &camera->position);
         }
 
-        const vec3f shifted_pos = (vec3f){
-            pos.x,
-            pos.y,
-            pos.z
-        };
-
-        get_block_with_ray(world, &shifted_pos, &facing, &ray);
+        camera_update(camera);
+        get_block_with_ray(world, &camera->position, &camera->facing, &ray);
 
         if(ray.valid) {
             char buff[32];
@@ -532,14 +507,20 @@ int main() {
             pm_x = 320; pm_y = 240;
             m_x = 320; m_y = 240;
         }
-        
-        view = mat4_identity();
-        view = mat4_mul_mat4(mat4_translation(-pos.x, -pos.y, -pos.z), view);
 
-        view = mat4_mul_mat4(mat4_rotation_y(-rot.y), view);
-        view = mat4_mul_mat4(mat4_rotation_x(-rot.x), view);
+        {
+            char buff[32];
 
-        if(test) view = mat4_mul_mat4(mat4_translation(0.f, 0.f, 0.6f), view);
+            snprintf(buff, 32, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
+            text_set(pos_text, buff);
+        }
+
+        {
+            char buff[32];
+
+            snprintf(buff, 32, "Rot %.2f %.2f", camera->position.x, camera->position.y);
+            text_set(rot_text, buff);
+        }
         
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -552,8 +533,8 @@ int main() {
 
         shader_use(shader);
         shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
-        shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, view.m);
-        shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, projection.m);
+        shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, camera->view.m);
+        shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, camera->projection.m);
 
         atlas_bind(atlas);
         world_render(world, shader);
@@ -640,6 +621,8 @@ int main() {
     vbo_destroy(&cursor_vbo);
     vbo_destroy(&cursor_vio);
     vao_destroy(&cursor_vao);
+
+    camera_destroy(camera);
 
     atlas_destroy(atlas);
     world_destroy(world);
