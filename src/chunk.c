@@ -1,8 +1,9 @@
 #include "chunk.h"
 #include "world.h"
 #include "block.h"
-#include "constants.h"
 #include "math/matrix.h"
+
+#include "direction.h"
 
 #include "glx/vao.h"
 #include "glx/vbo.h"
@@ -38,18 +39,6 @@ const float TEX_UV[] = {
     1.f,    0.f,    // 2 - right bottom
     0.f,    0.f     // 3 - left bottom
 };
-
-vec3i dir_to_vec3i(direction_e d) {
-    switch(d) {
-        case FRONT: return (vec3i) { 0, 0, -1 };
-        case BACK: return (vec3i) { 0, 0, 1 };
-        case RIGHT: return (vec3i) { 1, 0, 0 };
-        case LEFT: return (vec3i) { -1, 0, 0 };
-        case TOP: return (vec3i) { 0, 1, 0 };
-        case BOTTOM: return (vec3i) { 0, -1, 0 };
-        default: return (vec3i) { 0, 0, 0 };
-    }
-}
 
 chunk_t *chunk_init(world_t *world, int x, int z) {
     chunk_t *p = (chunk_t*)malloc(sizeof(chunk_t));
@@ -191,7 +180,7 @@ void prepare_chunk(chunk_t *p) {
                 }
 
                 for(direction_e d = 0; d < 6; ++d) {
-                    vec3i dv = dir_to_vec3i(d);
+                    vec3i dv = DIR2VEC3I(d);
                     vec3i neighbor = { x + dv.x, y + dv.y, z + dv.z };
                     vec3i wneighbor = {
                         p->position.x * CHUNK_SIZE_X + x + dv.x,
@@ -230,32 +219,4 @@ void chunk_render(chunk_t *p, shader_t *s) {
 
     vao_bind(&p->meshes.transparent->vao);
     glDrawElements(GL_TRIANGLES, p->meshes.transparent->indices->index, GL_UNSIGNED_INT, (void*)0);
-}
-
-const char* direction_name(direction_e d) {
-    switch(d) {
-        case FRONT: return "FRONT";
-        case BACK: return "BACK";
-        case LEFT: return "LEFT";
-        case RIGHT: return "RIGHT";
-        case TOP: return "TOP";
-        case BOTTOM: return "BOTTOM";
-    }
-
-    return NULL;
-}
-
-vec3f direction_to_vec3f(direction_e d) {
-    vec3f temp = { 0, 0, 0 };
-
-    switch(d) {
-        case FRONT: temp.z = 1; break;
-        case BACK: temp.z = -1; break;
-        case LEFT: temp.x = -1; break;
-        case RIGHT: temp.x = 1; break;
-        case TOP: temp.y = 1; break;
-        case BOTTOM: temp.y = -1; break;
-    }
-
-    return temp;
 }

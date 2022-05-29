@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "constants.h"
+#include "direction.h"
 #include "glx/vbo.h"
 
 typedef enum {

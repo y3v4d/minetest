@@ -1,8 +1,9 @@
 #ifndef __RAY_H__
 #define __RAY_H__
 
-#include <math/vec.h>
+#include "math/vec.h"
 #include "world.h"
+#include "direction.h"
 
 typedef struct {
     vec3i coord;

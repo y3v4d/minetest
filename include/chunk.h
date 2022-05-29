@@ -36,7 +36,4 @@ void chunk_render(chunk_t *p, shader_t *s);
 uint8_t chunk_get_block(const chunk_t *p, int x, int y, int z);
 void chunk_set_block(chunk_t *p, int x, int y, int z, uint8_t type);
 
-const char* direction_name(direction_e d);
-vec3f direction_to_vec3f(direction_e d);
-
 #endif

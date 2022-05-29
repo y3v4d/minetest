@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(minetest src/main.c)
 
-target_sources(minetest PUBLIC src/block.c src/ray.c src/text.c  src/chunk.c src/world.c src/system.c src/mesh.c)
+target_sources(minetest PUBLIC src/direction.c src/block.c src/ray.c src/text.c  src/chunk.c src/world.c src/system.c src/mesh.c)
 target_sources(minetest PUBLIC src/math/vec.c src/math/matrix.c)
 target_sources(minetest PUBLIC src/utils/font_loader.c src/utils/img_loader.c)
 target_sources(minetest PUBLIC src/glx/atlas.c src/glx/texture.c src/glx/vao.c src/glx/vbo.c src/glx/shader.c)

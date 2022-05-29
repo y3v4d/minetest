@@ -34,20 +34,20 @@ void get_block_with_ray(const world_t *w, const vec3f *pos, const vec3f *facing,
             if(distance.y < distance.x) {
                 if(facing->y < 0) {
                     output->coord.y += -1;
-                    output->face = TOP;
+                    output->face = DIRECTION_TOP;
                 } else {
                     output->coord.y += 1;
-                    output->face = BOTTOM;
+                    output->face = DIRECTION_BOTTOM;
                 }
 
                 t += distance.y;
             } else {
                 if(facing->x < 0) {
                     output->coord.x += -1;
-                    output->face = RIGHT;
+                    output->face = DIRECTION_RIGHT;
                 } else {
                     output->coord.x += 1;
-                    output->face = LEFT;
+                    output->face = DIRECTION_LEFT;
                 }
 
                 t += distance.x;
@@ -56,20 +56,20 @@ void get_block_with_ray(const world_t *w, const vec3f *pos, const vec3f *facing,
             if(distance.y < distance.z) {
                 if(facing->y < 0) {
                     output->coord.y += -1;
-                    output->face = TOP;
+                    output->face = DIRECTION_TOP;
                 } else {
                     output->coord.y += 1;
-                    output->face = BOTTOM;
+                    output->face = DIRECTION_BOTTOM;
                 }
 
                 t += distance.y;
             } else {
                 if(facing->z < 0) {
                     output->coord.z += -1;
-                    output->face = FRONT;
+                    output->face = DIRECTION_FRONT;
                 } else {
                     output->coord.z += 1;
-                    output->face = BACK;
+                    output->face = DIRECTION_BACK;
                 }
 
                 t += distance.z;

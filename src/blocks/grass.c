@@ -2,8 +2,8 @@
 
 static inline uint8_t get_texture_face(direction_e d) {
     switch(d) {
-        case TOP: return 1;
-        case BOTTOM: return 2;
+        case DIRECTION_TOP: return 1;
+        case DIRECTION_BOTTOM: return 2;
         default: return 0;
     }
 }
