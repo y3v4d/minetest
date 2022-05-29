@@ -20,10 +20,10 @@ void world_sort_chunks(world_t *w, vec3f* player_pos) {
 
     for(int i = 0; i < TOTAL; ++i) {
         int highest = i;
-        float highest_distance = distance_between(pos.x, pos.z, w->chunks[highest]->x * CHUNK_SIZE_X, w->chunks[highest]->z * CHUNK_SIZE_Z);
+        float highest_distance = distance_between(pos.x, pos.z, w->chunks[highest]->position.x * CHUNK_SIZE_X, w->chunks[highest]->position.y * CHUNK_SIZE_Z);
 
         for(int j = i + 1; j < TOTAL; ++j) {
-            float current_distance = distance_between(pos.x, pos.z, w->chunks[j]->x * CHUNK_SIZE_X, w->chunks[j]->z * CHUNK_SIZE_Z);
+            float current_distance = distance_between(pos.x, pos.z, w->chunks[j]->position.x * CHUNK_SIZE_X, w->chunks[j]->position.y * CHUNK_SIZE_Z);
             if(current_distance > highest_distance) {
                 current_distance = highest_distance;
                 highest = j;
@@ -47,7 +47,7 @@ world_t* world_init() {
 
     for(int z = 0; z < CHUNK_Z; ++z) {
         for(int x = 0; x < CHUNK_X; ++x) {
-            t->chunks[z * CHUNK_X + x] = initialize_chunk(t, x - 1, -z + 1);
+            t->chunks[z * CHUNK_X + x] = chunk_init(t, x - 1, -z + 1);
         }
     }
 
@@ -64,7 +64,7 @@ void world_destroy(world_t *p) {
     if(!p) return;
 
     for(int i = 0; i < CHUNK_X * CHUNK_Z; ++i) {
-        if(p->chunks[i]) free_chunk(p->chunks[i]);
+        if(p->chunks[i]) chunk_destroy(p->chunks[i]);
     }
 
     free(p);
@@ -74,7 +74,7 @@ chunk_t* find_chunk(const world_t *w, int x, int z) {
     //if(x >= CHUNK_X || x < 0 || -z >= CHUNK_Z || -z < 0) return NULL;
 
     for(int i = 0; i < CHUNK_X * CHUNK_Z; ++i) {
-        if(w->chunks[i]->x == x && w->chunks[i]->z == z) return w->chunks[i];
+        if(w->chunks[i]->position.x == x && w->chunks[i]->position.y == z) return w->chunks[i];
     }
 
     return NULL;

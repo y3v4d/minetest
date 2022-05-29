@@ -13,46 +13,40 @@
 #define CHUNK_SIZE_Y 16
 #define CHUNK_SIZE_Z 16
 
-typedef struct _world_s world_t;
+// ONE VERTEX DATA
+// x y z u v layer
 
-typedef struct _chunk_s {
-    world_t *world;
+typedef struct _mesh_buffer_s {
+    void *data;
+    size_t index, capacity;
+} mesh_buffer_t;
 
-    int x, z; // position in chunks
+typedef struct _mesh_s {
+    mesh_buffer_t *vertices, *indices;
 
-    // ONE VERTEX DATA
-    // x y z u v layer
-    float *vertices;
-    int vertex_count;
-
-    int *indices;
-    int index_count;
-
-    int mesh_counter;
-
-    float *t_vertices;
-    int t_vertex_count;
-
-    int *t_indices;
-    int t_index_count;
-
-    int t_mesh_counter;
+    int counter;
 
     vbo_t vbo, vio;
     vao_t vao;
+} mesh_t;
 
-    vbo_t t_vbo, t_vio;
-    vao_t t_vao;
-
+typedef struct _world_s world_t;
+typedef struct _chunk_s {
+    world_t *world;
     uint8_t *data;
 
-    bool_e is_dirty;
+    vec2i position; // in chunks
+
+    struct {
+        mesh_t *base, *transparent;
+    } meshes;
 } chunk_t;
 
-chunk_t *initialize_chunk(world_t *world, int x, int z);
+chunk_t *chunk_init(world_t *world, int x, int z);
+void chunk_destroy(chunk_t *p);
+
 void prepare_chunk(chunk_t *p);
 void chunk_render(chunk_t *p, shader_t *s);
-void free_chunk(chunk_t *p);
 
 uint8_t get_chunk_block(const chunk_t *p, int x, int y, int z);
 void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type);

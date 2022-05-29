@@ -7,6 +7,7 @@
 #include "glx/vao.h"
 #include "glx/vbo.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,6 +40,86 @@ const float TEX_UV[] = {
     0.f,    0.f     // 3 - left bottom
 };
 
+void mesh_buffer_destroy(mesh_buffer_t *m) {
+    if(!m) return;
+
+    if(m->data) free(m->data);
+    free(m);
+}
+
+mesh_buffer_t* mesh_buffer_init(size_t size, size_t bytes_per_data) {
+    mesh_buffer_t *temp = (mesh_buffer_t*)malloc(sizeof(mesh_buffer_t));
+    if(!temp) {
+        fprintf(stderr, "Couldn't allocate memory for mesh buffer\n");
+        return NULL;
+    }
+
+    temp->data = malloc(size * bytes_per_data);
+    if(!temp->data) {
+        fprintf(stderr, "Couldn't allocate memory for mesh buffer data\n");
+        free(temp);
+
+        return NULL;
+    }
+
+    temp->index = 0;
+    temp->capacity = size;
+
+    return temp;
+}
+
+void mesh_destroy(mesh_t *m) {
+    if(!m) return;
+
+    mesh_buffer_destroy(m->vertices);
+    mesh_buffer_destroy(m->indices);
+
+    vbo_destroy(&m->vbo);
+    vbo_destroy(&m->vio);
+    vao_destroy(&m->vao);
+
+    free(m);
+}
+
+mesh_t* mesh_init() {
+    const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
+    
+    mesh_t *temp = (mesh_t*)malloc(sizeof(mesh_t));
+    if(!temp) {
+        fprintf(stderr, "Couldn't allocate memory for the mesh\n");
+        return NULL;
+    }
+
+    temp->vertices = mesh_buffer_init(SIZE * 6 * 6 * 4, sizeof(float));
+    if(!temp->vertices) {
+        mesh_destroy(temp);
+        return NULL;
+    }
+
+    temp->indices = mesh_buffer_init(SIZE * 6 * 6, sizeof(int));
+    if(!temp->indices) {
+        mesh_destroy(temp);
+        return NULL;
+    }
+
+    temp->counter = 0;
+
+    temp->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
+    temp->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
+    temp->vao = vao_generate();
+
+    vao_bind(&temp->vao);
+    vbo_bind(&temp->vbo);
+    vbo_bind(&temp->vio);
+    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+
+    vao_bind(NULL);
+
+    return temp;
+}
+
 vec3i dir_to_vec3i(direction_e d) {
     switch(d) {
         case FRONT: return (vec3i) { 0, 0, -1 };
@@ -51,24 +132,20 @@ vec3i dir_to_vec3i(direction_e d) {
     }
 }
 
-chunk_t *initialize_chunk(world_t *world, int x, int z) {
+chunk_t *chunk_init(world_t *world, int x, int z) {
     chunk_t *p = (chunk_t*)malloc(sizeof(chunk_t));
     memset(p, 0, sizeof(chunk_t));
 
-    p->is_dirty = FALSE;
     p->world = world;
 
-    p->x = x;
-    p->z = z;
+    p->position.x = x;
+    p->position.y = z;
 
     const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
     p->data = (uint8_t*)malloc(sizeof(uint8_t) * SIZE);
 
-    p->vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
-    p->indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
-
-    p->t_vertices = (float*)malloc(sizeof(float) * SIZE * 6 * 4 * 6);
-    p->t_indices = (int*)malloc(sizeof(int) * SIZE * 6 * 6);
+    p->meshes.base = mesh_init();
+    p->meshes.transparent = mesh_init();
 
     /*memset(p->data, BLOCK_STONE, 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_DIRT, CHUNK_SIZE_X * CHUNK_SIZE_Z);
@@ -90,74 +167,41 @@ chunk_t *initialize_chunk(world_t *world, int x, int z) {
         }
     }
 
-    p->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
-    p->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
-    p->vao = vao_generate();
-
-    vao_bind(&p->vao);
-    vbo_bind(&p->vbo);
-    vbo_bind(&p->vio);
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-
-    vao_bind(NULL);
-
-    p->t_vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
-    p->t_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
-    p->t_vao = vao_generate();
-
-    vao_bind(&p->t_vao);
-    vbo_bind(&p->t_vbo);
-    vbo_bind(&p->t_vio);
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-
-    vao_bind(NULL);
-
     return p;
 }
 
+void chunk_destroy(chunk_t *p) {
+    if(!p) return;
+
+    mesh_destroy(p->meshes.base);
+    mesh_destroy(p->meshes.transparent);
+
+    if(p->data) free(p->data);
+    free(p);
+}
+
 void emit_face(chunk_t *p, int x, int y, int z, direction_e d, uint8_t block_id) {
+    mesh_t *mesh = (BLOCKS[block_id].is_transparent ? p->meshes.transparent : p->meshes.base);
+
     // emit vertices
     for(int i = 0; i < 4; ++i) {
         const float *v = &CUBE_VERTICES[CUBE_INDICES[d * 6 + i] * 3];
 
-        if(!BLOCKS[block_id].is_transparent) {
-            p->vertices[p->mesh_counter++] = x + v[0];
-            p->vertices[p->mesh_counter++] = y + v[1];
-            p->vertices[p->mesh_counter++] = z + v[2];
-            p->vertices[p->mesh_counter++] = TEX_UV[i * 2];
-            p->vertices[p->mesh_counter++] = TEX_UV[i * 2 + 1];
+        ((float*)mesh->vertices->data)[mesh->counter++] = x + v[0];
+        ((float*)mesh->vertices->data)[mesh->counter++] = y + v[1];
+        ((float*)mesh->vertices->data)[mesh->counter++] = z + v[2];
+        ((float*)mesh->vertices->data)[mesh->counter++] = TEX_UV[i * 2];
+        ((float*)mesh->vertices->data)[mesh->counter++] = TEX_UV[i * 2 + 1];
 
-            p->vertices[p->mesh_counter++] = BLOCKS[block_id].get_texture_face(d);
-        } else {
-            p->t_vertices[p->t_mesh_counter++] = x + v[0];
-            p->t_vertices[p->t_mesh_counter++] = y + v[1];
-            p->t_vertices[p->t_mesh_counter++] = z + v[2];
-            p->t_vertices[p->t_mesh_counter++] = TEX_UV[i * 2];
-            p->t_vertices[p->t_mesh_counter++] = TEX_UV[i * 2 + 1];
-
-            p->t_vertices[p->t_mesh_counter++] = BLOCKS[block_id].get_texture_face(d);
-        
-        }
+        ((float*)mesh->vertices->data)[mesh->counter++] = BLOCKS[block_id].get_texture_face(d);
     }
 
     // emit indices
     for(int i = 0; i < 6; ++i) {
-        if(!BLOCKS[block_id].is_transparent) {
-            p->indices[p->index_count++] = p->vertex_count + CUBE_INDICES[i];
-        } else {
-            p->t_indices[p->t_index_count++] = p->t_vertex_count + CUBE_INDICES[i];
-        }
+        ((int*)mesh->indices->data)[mesh->indices->index++] = mesh->vertices->index + CUBE_INDICES[i];
     }
-
-    if(!BLOCKS[block_id].is_transparent) {
-        p->vertex_count += 4;
-    } else {
-        p->t_vertex_count += 4;
-    }
+    
+    mesh->vertices->index += 4;
 }
 
 bool_e is_block_in_bounds(const chunk_t *p, int x, int y, int z) {
@@ -188,22 +232,21 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
     }
 
     p->data[coord] = type;
-    p->is_dirty = TRUE;
 
     if(is_on_boundry(p, x, y, z)) {
         chunk_t *n[2] = { NULL, NULL };
 
         int i = 0;
         if(x == 0) {
-            n[i++] = world_find_chunk(p->world, p->x - 1, p->z);
+            n[i++] = world_find_chunk(p->world, p->position.x - 1, p->position.y);
         } else if(x == CHUNK_SIZE_X - 1) {
-            n[i++] = world_find_chunk(p->world, p->x + 1, p->z);
+            n[i++] = world_find_chunk(p->world, p->position.x + 1, p->position.y);
         }
 
         if(z == 0) {
-            n[i++] = world_find_chunk(p->world, p->x, p->z + 1);
+            n[i++] = world_find_chunk(p->world, p->position.x, p->position.y + 1);
         } else if(-z == CHUNK_SIZE_Z - 1) {
-            n[i++] = world_find_chunk(p->world, p->x, p->z - 1);
+            n[i++] = world_find_chunk(p->world, p->position.x, p->position.y - 1);
         }
 
         for(int i = 0; i < 2; ++i) {
@@ -217,13 +260,13 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
 void prepare_chunk(chunk_t *p) {
     uint8_t *b = p->data;
 
-    p->mesh_counter = 0;
-    p->index_count  = 0;
-    p->vertex_count = 0;
+    p->meshes.base->counter = 0;
+    p->meshes.base->vertices->index = 0;
+    p->meshes.base->indices->index = 0;
 
-    p->t_mesh_counter = 0;
-    p->t_index_count = 0;
-    p->t_vertex_count = 0;
+    p->meshes.transparent->counter = 0;
+    p->meshes.transparent->vertices->index = 0;
+    p->meshes.transparent->indices->index = 0;
 
     for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
         for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
@@ -237,9 +280,9 @@ void prepare_chunk(chunk_t *p) {
                     vec3i dv = dir_to_vec3i(d);
                     vec3i neighbor = { x + dv.x, y + dv.y, z + dv.z };
                     vec3i wneighbor = {
-                        p->x * CHUNK_SIZE_X + x + dv.x,
+                        p->position.x * CHUNK_SIZE_X + x + dv.x,
                         y + dv.y,
-                        -p->z * CHUNK_SIZE_Z + z + dv.z
+                        -p->position.y * CHUNK_SIZE_Z + z + dv.z
                     };
 
                     block_t neighbor_block = BLOCKS[BLOCK_AIR];
@@ -260,47 +303,26 @@ void prepare_chunk(chunk_t *p) {
         }
     }
 
-    vbo_bind(&p->vbo);
-    vbo_data(&p->vbo, p->mesh_counter * sizeof(float), p->vertices);
-    vbo_bind(&p->vio);
-    vbo_data(&p->vio, p->index_count * sizeof(GLuint), p->indices);
+    vbo_bind(&p->meshes.base->vbo);
+    vbo_data(&p->meshes.base->vbo, p->meshes.base->counter * sizeof(float), p->meshes.base->vertices->data);
+    vbo_bind(&p->meshes.base->vio);
+    vbo_data(&p->meshes.base->vio, p->meshes.base->indices->index * sizeof(GLuint), p->meshes.base->indices->data);
 
-    vbo_bind(&p->t_vbo);
-    vbo_data(&p->t_vbo, p->t_mesh_counter * sizeof(float), p->t_vertices);
-    vbo_bind(&p->t_vio);
-    vbo_data(&p->t_vio, p->t_index_count * sizeof(GLuint), p->t_indices);
+    vbo_bind(&p->meshes.transparent->vbo);
+    vbo_data(&p->meshes.transparent->vbo, p->meshes.transparent->counter * sizeof(float), p->meshes.transparent->vertices->data);
+    vbo_bind(&p->meshes.transparent->vio);
+    vbo_data(&p->meshes.transparent->vio, p->meshes.transparent->indices->index * sizeof(GLuint), p->meshes.transparent->indices->data);
 }
 
 void chunk_render(chunk_t *p, shader_t *s) {
-    mat4_t model = mat4_translation(p->x * CHUNK_SIZE_X, 0, p->z * CHUNK_SIZE_Z);
+    mat4_t model = mat4_translation(p->position.x * CHUNK_SIZE_X, 0, p->position.y * CHUNK_SIZE_Z);
     shader_uniform(s, "model", UNIFORM_MATRIX_4, 1, model.m);
 
-    vao_bind(&p->vao);
-    glDrawElements(GL_TRIANGLES, p->index_count, GL_UNSIGNED_INT, (void*)0);
+    vao_bind(&p->meshes.base->vao);
+    glDrawElements(GL_TRIANGLES, p->meshes.base->indices->index, GL_UNSIGNED_INT, (void*)0);
 
-    vao_bind(&p->t_vao);
-    glDrawElements(GL_TRIANGLES, p->t_index_count, GL_UNSIGNED_INT, (void*)0);
-}
-
-void free_chunk(chunk_t *p) {
-    if(!p) return;
-
-    vbo_destroy(&p->vbo);
-    vbo_destroy(&p->vio);
-    vao_destroy(&p->vao);
-
-    vbo_destroy(&p->t_vbo);
-    vbo_destroy(&p->t_vio);
-    vao_destroy(&p->t_vao);
-
-    free(p->vertices);
-    free(p->indices);
-
-    free(p->t_vertices);
-    free(p->t_indices);
-
-    free(p->data);
-    free(p);
+    vao_bind(&p->meshes.transparent->vao);
+    glDrawElements(GL_TRIANGLES, p->meshes.transparent->indices->index, GL_UNSIGNED_INT, (void*)0);
 }
 
 const char* direction_name(direction_e d) {
