@@ -419,7 +419,7 @@ int main() {
         if(vel.y < -0.2f) vel.y = -0.2f;
 
         {
-            vec2f n = vec2_normalize((vec2f){vel.x, vel.z});
+            vec2f n = vec2f_normalize((vec2f){vel.x, vel.z});
             vel.x = n.x * SPEED;
             vel.z = n.y * SPEED;
         }

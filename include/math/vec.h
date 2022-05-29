@@ -25,13 +25,13 @@ typedef struct {
     float x, y, z, w;
 } vec4f;
 
-float vec2_magnitude(vec2f v);
-vec2f vec2_normalize(vec2f v);
+float vec2f_magnitude(vec2f v);
+vec2f vec2f_normalize(vec2f v);
 
-float magnitude(vec3f v);
-vec3f normalize(vec3f v);
+float vec3f_magnitude(vec3f v);
+vec3f vec3f_normalize(vec3f v);
 
-vec3f cross(vec3f v0, vec3f v1);
-float dot(vec3f v0, vec3f v1);
+vec3f vec3f_cross(vec3f v0, vec3f v1);
+float vec3f_dot(vec3f v0, vec3f v1);
 
 #endif

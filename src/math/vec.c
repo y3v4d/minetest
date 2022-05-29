@@ -1,32 +1,36 @@
 #include "math/vec.h"
 #include <math.h>
 
-float vec2_magnitude(vec2f v) {
+float vec2f_magnitude(vec2f v) {
     return sqrtf(v.x * v.x + v.y * v.y);
 }
 
-vec2f vec2_normalize(vec2f v) {
-    float m = vec2_magnitude(v);
+vec2f vec2f_normalize(vec2f v) {
+    float m = vec2f_magnitude(v);
 
     if(m == 0) return (vec2f){ 0, 0 };
     else return (vec2f) { v.x / m, v.y / m };
 }
 
-float magnitude(vec3f v) {
+float vec3f_magnitude(vec3f v) {
     return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-vec3f normalize(vec3f v) {
-    float m = magnitude(v);
+vec3f vec3f_normalize(vec3f v) {
+    float m = vec3f_magnitude(v);
 
     if(m == 0) return (vec3f){ 0, 0, 0 };
     else return (vec3f) { v.x / m, v.y / m, v.z / m };
 }
 
-vec3f cross(vec3f v0, vec3f v1) {
-    return (vec3f){ v0.y * v1.z - v0.z * v1.y, v0.z * v1.x - v0.x * v1.z, v0.x * v1.y - v0.y * v1.x };
+vec3f vec3f_cross(vec3f v0, vec3f v1) {
+    return (vec3f) { 
+        v0.y * v1.z - v0.z * v1.y, 
+        v0.z * v1.x - v0.x * v1.z, 
+        v0.x * v1.y - v0.y * v1.x 
+    };
 }
 
-float dot(vec3f v0, vec3f v1) {
+float vec3f_dot(vec3f v0, vec3f v1) {
     return v0.x * v1.x + v0.y * v1.y;
 }
