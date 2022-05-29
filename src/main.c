@@ -14,8 +14,8 @@
 #include "glx/texture.h"
 #include "glx/atlas.h"
 
-#include "system.h"
-#include "event.h"
+#include "core/system.h"
+#include "core/event.h"
 
 #include "block.h"
 #include "chunk.h"
