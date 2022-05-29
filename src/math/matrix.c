@@ -93,3 +93,11 @@ mat4_t mat4_rotation_z(float angle) {
         0.f,                    0.f,                    0.f,    1.f
     };
 }
+
+void mat4_translate(mat4_t *m, float x, float y, float z) {
+    mat4_t r = mat4_mul_mat4(mat4_translation(x, y, z), *m);
+
+    for(int i = 0; i < 16; ++i) {
+        m->m[i] = r.m[i];
+    }
+}

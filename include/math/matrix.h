@@ -19,4 +19,6 @@ mat4_t mat4_rotation_x(float angle);
 mat4_t mat4_rotation_y(float angle);
 mat4_t mat4_rotation_z(float angle);
 
+void mat4_translate(mat4_t *m, float x, float y, float z);
+
 #endif
