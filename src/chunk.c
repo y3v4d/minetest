@@ -7,7 +7,6 @@
 #include "glx/vao.h"
 #include "glx/vbo.h"
 
-#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,86 +38,6 @@ const float TEX_UV[] = {
     1.f,    0.f,    // 2 - right bottom
     0.f,    0.f     // 3 - left bottom
 };
-
-void mesh_buffer_destroy(mesh_buffer_t *m) {
-    if(!m) return;
-
-    if(m->data) free(m->data);
-    free(m);
-}
-
-mesh_buffer_t* mesh_buffer_init(size_t size, size_t bytes_per_data) {
-    mesh_buffer_t *temp = (mesh_buffer_t*)malloc(sizeof(mesh_buffer_t));
-    if(!temp) {
-        fprintf(stderr, "Couldn't allocate memory for mesh buffer\n");
-        return NULL;
-    }
-
-    temp->data = malloc(size * bytes_per_data);
-    if(!temp->data) {
-        fprintf(stderr, "Couldn't allocate memory for mesh buffer data\n");
-        free(temp);
-
-        return NULL;
-    }
-
-    temp->index = 0;
-    temp->capacity = size;
-
-    return temp;
-}
-
-void mesh_destroy(mesh_t *m) {
-    if(!m) return;
-
-    mesh_buffer_destroy(m->vertices);
-    mesh_buffer_destroy(m->indices);
-
-    vbo_destroy(&m->vbo);
-    vbo_destroy(&m->vio);
-    vao_destroy(&m->vao);
-
-    free(m);
-}
-
-mesh_t* mesh_init() {
-    const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
-    
-    mesh_t *temp = (mesh_t*)malloc(sizeof(mesh_t));
-    if(!temp) {
-        fprintf(stderr, "Couldn't allocate memory for the mesh\n");
-        return NULL;
-    }
-
-    temp->vertices = mesh_buffer_init(SIZE * 6 * 6 * 4, sizeof(float));
-    if(!temp->vertices) {
-        mesh_destroy(temp);
-        return NULL;
-    }
-
-    temp->indices = mesh_buffer_init(SIZE * 6 * 6, sizeof(int));
-    if(!temp->indices) {
-        mesh_destroy(temp);
-        return NULL;
-    }
-
-    temp->counter = 0;
-
-    temp->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
-    temp->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
-    temp->vao = vao_generate();
-
-    vao_bind(&temp->vao);
-    vbo_bind(&temp->vbo);
-    vbo_bind(&temp->vio);
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-
-    vao_bind(NULL);
-
-    return temp;
-}
 
 vec3i dir_to_vec3i(direction_e d) {
     switch(d) {
@@ -187,13 +106,13 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d, uint8_t block_id)
     for(int i = 0; i < 4; ++i) {
         const float *v = &CUBE_VERTICES[CUBE_INDICES[d * 6 + i] * 3];
 
-        ((float*)mesh->vertices->data)[mesh->counter++] = x + v[0];
-        ((float*)mesh->vertices->data)[mesh->counter++] = y + v[1];
-        ((float*)mesh->vertices->data)[mesh->counter++] = z + v[2];
-        ((float*)mesh->vertices->data)[mesh->counter++] = TEX_UV[i * 2];
-        ((float*)mesh->vertices->data)[mesh->counter++] = TEX_UV[i * 2 + 1];
+        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = x + v[0];
+        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = y + v[1];
+        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = z + v[2];
+        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = TEX_UV[i * 2];
+        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = TEX_UV[i * 2 + 1];
 
-        ((float*)mesh->vertices->data)[mesh->counter++] = BLOCKS[block_id].get_texture_face(d);
+        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = BLOCKS[block_id].get_texture_face(d);
     }
 
     // emit indices
@@ -212,17 +131,17 @@ bool_e is_on_boundry(const chunk_t *p, int x, int y, int z) {
     return x == 0 || x == CHUNK_SIZE_X - 1 || -z == 0 || -z == CHUNK_SIZE_Z - 1;
 }
 
-uint8_t get_chunk_block(const chunk_t *p, int x, int y, int z) {
+uint8_t chunk_get_block(const chunk_t *p, int x, int y, int z) {
     if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || -z < 0 || -z >= CHUNK_SIZE_Z) {
-        return 0; // TODO replace with data from other chunk
+        return 0;
     }
 
     return *(p->data + (y * CHUNK_SIZE_X * CHUNK_SIZE_Z) + (-z * CHUNK_SIZE_X) + x);
 }
 
-void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
+void chunk_set_block(chunk_t *p, int x, int y, int z, uint8_t type) {
     if(x < 0 || x >= CHUNK_SIZE_X || y < 0 || y >= CHUNK_SIZE_Y || -z < 0 || -z >= CHUNK_SIZE_Z) {
-        return; // TODO replace with data from other chunk
+        return;
     }
 
     const int coord = y * CHUNK_SIZE_X * CHUNK_SIZE_Z + -z * CHUNK_SIZE_X + x;
@@ -260,13 +179,8 @@ void set_chunk_block(chunk_t *p, int x, int y, int z, uint8_t type) {
 void prepare_chunk(chunk_t *p) {
     uint8_t *b = p->data;
 
-    p->meshes.base->counter = 0;
-    p->meshes.base->vertices->index = 0;
-    p->meshes.base->indices->index = 0;
-
-    p->meshes.transparent->counter = 0;
-    p->meshes.transparent->vertices->index = 0;
-    p->meshes.transparent->indices->index = 0;
+    mesh_prepare(p->meshes.base);
+    mesh_prepare(p->meshes.transparent);
 
     for(int y = 0; y < CHUNK_SIZE_Y; ++y) {
         for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
@@ -288,7 +202,7 @@ void prepare_chunk(chunk_t *p) {
                     block_t neighbor_block = BLOCKS[BLOCK_AIR];
 
                     if(is_block_in_bounds(p, neighbor.x, neighbor.y, -neighbor.z)) {
-                        neighbor_block = BLOCKS[get_chunk_block(p, neighbor.x, neighbor.y, -neighbor.z)];
+                        neighbor_block = BLOCKS[chunk_get_block(p, neighbor.x, neighbor.y, -neighbor.z)];
                     } else {
                         neighbor_block = BLOCKS[world_get_block(p->world, wneighbor.x, wneighbor.y, -wneighbor.z)];
                     }
@@ -303,15 +217,8 @@ void prepare_chunk(chunk_t *p) {
         }
     }
 
-    vbo_bind(&p->meshes.base->vbo);
-    vbo_data(&p->meshes.base->vbo, p->meshes.base->counter * sizeof(float), p->meshes.base->vertices->data);
-    vbo_bind(&p->meshes.base->vio);
-    vbo_data(&p->meshes.base->vio, p->meshes.base->indices->index * sizeof(GLuint), p->meshes.base->indices->data);
-
-    vbo_bind(&p->meshes.transparent->vbo);
-    vbo_data(&p->meshes.transparent->vbo, p->meshes.transparent->counter * sizeof(float), p->meshes.transparent->vertices->data);
-    vbo_bind(&p->meshes.transparent->vio);
-    vbo_data(&p->meshes.transparent->vio, p->meshes.transparent->indices->index * sizeof(GLuint), p->meshes.transparent->indices->data);
+    mesh_finalize(p->meshes.base);
+    mesh_finalize(p->meshes.transparent);
 }
 
 void chunk_render(chunk_t *p, shader_t *s) {
