@@ -31,6 +31,8 @@
 #include "direction.h"
 #include "camera.h"
 
+#include "sprite.h"
+
 #include "world.h"
 
 const float HIGH_VERTICES[] = {
@@ -49,19 +51,6 @@ const unsigned HIGH_INDICES[] = {
     0, 1, 1, 4, 4, 5, 5, 0,
     3, 2, 2, 7, 7, 6, 6, 3,
     0, 3, 1, 2, 4, 7, 5, 6
-};
-
-const float C_SIZE = 2.f;
-const float CURSOR_VERTICES[] = {
-    -C_SIZE, C_SIZE, 0.f, 0.f,
-    C_SIZE, C_SIZE, 0.f, 0.f,
-    C_SIZE, -C_SIZE, 0.f, 0.f,
-    -C_SIZE, -C_SIZE, 0.f, 0.f
-};
-
-const unsigned CURSOR_INDICES[] = {
-    2, 1, 0,
-    0, 3, 2
 };
 
 const float FOV = 60.f;
@@ -131,21 +120,10 @@ int main() {
 
     vao_bind(NULL);
 
-    vbo_t cursor_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
-    vbo_t cursor_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
-    vao_t cursor_vao = vao_generate();
+    sprite_t *s_cursor = sprite_init((vec3f) { (float)window_width / 2, (float)window_height / 2, 0.f });
+    if(!s_cursor) return 1;
 
-    vao_bind(&cursor_vao);
-    vbo_bind(&cursor_vbo);
-    vbo_data(&cursor_vbo, sizeof(CURSOR_VERTICES), CURSOR_VERTICES);
-
-    vbo_bind(&cursor_vio);
-    vbo_data(&cursor_vio, sizeof(CURSOR_INDICES), CURSOR_INDICES);
-
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(3 * sizeof(float)));
-
-    vao_bind(NULL);
+    s_cursor->texture = dot_tex;
 
     text_t *title = text_make(font, "MineTest OpenGL", (vec3f) { 0.f, 0.f, 0.f });
     if(!title) return 1;
@@ -493,18 +471,7 @@ int main() {
         shader_use(ui_shader);
         shader_uniform(ui_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
 
-        text_m.m[3] = window_width / 2.f;
-        text_m.m[7] = window_height / 2.f;
-        text_m.m[11] = 0.f;
-        shader_uniform(ui_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-
-        glActiveTexture(GL_TEXTURE0);
-        texture_bind(dot_tex);
-
-        vao_bind(&cursor_vao);
-        vbo_bind(&cursor_vbo);
-        vbo_bind(&cursor_vio);
-        glDrawElements(GL_TRIANGLES, sizeof(CURSOR_INDICES), GL_UNSIGNED_INT, (void*)0);
+        sprite_render(s_cursor, ui_shader);
 
         text_render(title, ui_shader);
         text_render(camera_mode, ui_shader);
@@ -528,13 +495,11 @@ int main() {
     text_destroy(camera_mode);
     fontbmp_close(font);
 
+    sprite_destroy(s_cursor);
+
     vbo_destroy(&highlight_vbo);
     vbo_destroy(&highlight_vio);
     vao_destroy(&highlight_vao);
-
-    vbo_destroy(&cursor_vbo);
-    vbo_destroy(&cursor_vio);
-    vao_destroy(&cursor_vao);
 
     camera_destroy(camera);
 
