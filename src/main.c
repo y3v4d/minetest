@@ -286,7 +286,7 @@ int main() {
                 } else if(event.eventmouse.button == MOUSE_BUTTON_3) {
                     if(ray.valid) {
                         vec3i off = DIR2VEC3I(ray.face);
-                        world_set_block(world, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z + off.z, current_block);
+                        world_set_block(world, ray.coord.x + off.x, ray.coord.y + off.y, ray.coord.z - off.z, current_block);
                     }
                 }
             }
