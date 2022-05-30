@@ -6,12 +6,13 @@
 
 typedef struct {
     vec3f position, rotation;
-    vec3f facing;
+    float aspect, fov, near, far;
 
+    vec3f facing;
     mat4_t view, projection;
 } camera_t;
 
-camera_t* camera_init();
+camera_t* camera_init(float aspect, float fov);
 void camera_destroy(camera_t *c);
 
 void camera_update(camera_t *c);

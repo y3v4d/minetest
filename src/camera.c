@@ -5,15 +5,21 @@
 #include <stdlib.h>
 #include <math.h>
 
-camera_t* camera_init() {
+camera_t* camera_init(float aspect, float fov) {
     camera_t *temp = (camera_t*)malloc(sizeof(camera_t));
     if(!temp) {
         fprintf(stderr, "Couldn't allocate memory for camera\n");
         return NULL;
     }
 
-    temp->position = (vec3f) { 0.f, 0.f, 0.f };
+    temp->position = (vec3f) { 0.f, 7.5f, 0.f };
     temp->rotation = (vec3f) { 0.f, 0.f, 0.f };
+
+    temp->aspect = aspect;
+    temp->fov = fov;
+
+    temp->near = 0.1f;
+    temp->far = 10.f;
 
     camera_update(temp);
 
@@ -37,12 +43,12 @@ void camera_update(camera_t *c) {
     };
 
     c->view = mat4_identity();
-    c->view = mat4_mul_mat4(mat4_translation(-c->position.x, -c->position.y, -c->position.z), c->view);
+    mat4_translate(&c->view, -c->position.x, -c->position.y, -c->position.z);
 
     c->view = mat4_mul_mat4(mat4_rotation_y(-c->rotation.y), c->view);
     c->view = mat4_mul_mat4(mat4_rotation_x(-c->rotation.x), c->view);
 
-    c->view = mat4_mul_mat4(mat4_translation(0.f, 0.f, 0.6f), c->view);
+    mat4_translate(&c->view, 0.f, 0.f, 0.6f);
 
-    c->projection = mat4_perspective(60.f, 1280.f / 720.f, 0.1f, 10.f); 
+    c->projection = mat4_perspective(c->fov, c->aspect, c->near, c->far); 
 }

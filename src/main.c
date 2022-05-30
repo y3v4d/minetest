@@ -77,6 +77,7 @@ const unsigned CURSOR_INDICES[] = {
     0, 3, 2
 };
 
+const float FOV = 60.f;
 int window_width = 640;
 int window_height = 480;
 
@@ -126,7 +127,7 @@ int main() {
         return 1;
     }
 
-    camera_t *camera = camera_init();
+    camera_t *camera = camera_init((float)window_width / window_height, FOV);
     if(!camera) {
         fprintf(stderr, "Couldn't create camera\n");
         return 1;
@@ -331,7 +332,9 @@ int main() {
                 printf("WM_DELETE_WINDOW invoked\n");
                 done = 1;
             } else if(event.type == EVENT_WINDOW_RESIZE) {
-                //projection = mat4_perspective(60.f, (float)event.window.width / event.window.height, 0.1f, 10.f);
+                camera->aspect = (float)event.window.width / event.window.height;
+                camera_update(camera);
+                
                 ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, -100.f, 100.f);
 
                 window_width = event.window.width;

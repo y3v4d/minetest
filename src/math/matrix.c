@@ -1,5 +1,6 @@
 #include "math/matrix.h"
 #include "math.h"
+#include <string.h>
 
 mat4_t mat4_identity() {
     return (mat4_t) { 
@@ -95,9 +96,12 @@ mat4_t mat4_rotation_z(float angle) {
 }
 
 void mat4_translate(mat4_t *m, float x, float y, float z) {
-    mat4_t r = mat4_mul_mat4(mat4_translation(x, y, z), *m);
+    const float coords[3] = { x, y, z };
+    float *p = m->m;
 
-    for(int i = 0; i < 16; ++i) {
-        m->m[i] = r.m[i];
+    for(int i = 0; i < 3; ++i) {
+        for(int j = 0; j < 4; ++j) {
+            *(p++) += coords[i] * m->m[12 + j];
+        }
     }
 }
