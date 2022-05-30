@@ -1,4 +1,6 @@
 #include "text.h"
+
+#include "glx/shader.h"
 #include "glx/vao.h"
 #include "glx/vbo.h"
 
@@ -15,7 +17,7 @@ const unsigned TEXT_INDICES[] = {
     3, 0, 2
 };
 
-text_t* text_make(fontbmp_t *font) {
+text_t* text_make(fontbmp_t *font, const char *string, vec3f position) {
     text_t *temp = (text_t*)malloc(sizeof(text_t));
     if(!temp) {
         fprintf(stderr, "Couldn't allocate memory for text_t\n");
@@ -37,8 +39,12 @@ text_t* text_make(fontbmp_t *font) {
 
     vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-
     vao_bind(NULL);
+
+    text_set(temp, string);
+
+    temp->position = position;
+    temp->model = mat4_translation(position.x, position.y, position.z);
 
     return temp;
 }
@@ -129,14 +135,19 @@ void text_set(text_t *p, const char *string) {
         emit_character(p, string[i], &x, &y);
     }
 
-    vao_bind(&p->vao);
     vbo_bind(&p->vbo);
     vbo_data(&p->vbo, p->mesh_counter * sizeof(float), p->vertices);
     vbo_bind(&p->vio);
     vbo_data(&p->vio, p->indices_count * sizeof(unsigned), p->indices);
 }
 
-void text_render(text_t *p) {
+void text_update(text_t *p, uint32_t flag) {
+    if(flag & TEXT_UPDATE_POSITION) {
+        mat4_translate(&p->model, p->position.x, p->position.y, p->position.z);
+    }
+}
+
+void text_render(text_t *p, const shader_t *shader) {
     vao_bind(&p->vao);
     vbo_bind(&p->vbo);
     vbo_bind(&p->vio);
@@ -144,5 +155,6 @@ void text_render(text_t *p) {
     glActiveTexture(GL_TEXTURE0);
     texture_bind(p->font->texture);
 
+    shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, p->model.m);
     glDrawElements(GL_TRIANGLES, p->indices_count, GL_UNSIGNED_INT, (void*)0);
 }

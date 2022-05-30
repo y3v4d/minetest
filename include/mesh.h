@@ -4,9 +4,6 @@
 #include "glx/vbo.h"
 #include "glx/vao.h"
 
-// ONE VERTEX DATA
-// x y z u v layer
-
 typedef struct _mesh_buffer_s {
     void *data;
 

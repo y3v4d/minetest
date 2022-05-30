@@ -65,8 +65,8 @@ const unsigned CURSOR_INDICES[] = {
 };
 
 const float FOV = 60.f;
-int window_width = 640;
-int window_height = 480;
+int window_width = 1280;
+int window_height = 720;
 
 int main() {
     g_init();
@@ -76,45 +76,25 @@ int main() {
     printf("OpenGL version: %s\n", version);
 
     world_t *world = world_init();
-    if(!world) {
-        fprintf(stderr, "Error creating world\n");
-        return 1;
-    }
+    if(!world) return 1;
 
     shader_t *shader = make_shader("data/shaders/main");
-    if(!shader) {
-        fprintf(stderr, "Error making shader main\n");
-        return 1;
-    }
+    if(!shader) return 1;
 
-    shader_t *text_shader = make_shader("data/shaders/text");
-    if(!shader) {
-        fprintf(stderr, "Error making shader text\n");
-        return 1;
-    }
+    shader_t *ui_shader = make_shader("data/shaders/ui");
+    if(!ui_shader) return 1;
 
     atlas_t *atlas = atlas_generate("data/textures/atlas.bmp", 16, 16);
-    if(!atlas) {
-        return 1;
-    }
+    if(!atlas) return 1;
 
     fontbmp_t *font = fontbmp_make("data/fonts/origami-mommy.fnt");
-    if(!font) {
-        fprintf(stderr, "Error loading font\n");
-        return 1;
-    }
+    if(!font) return 1;
 
     texture_t *dot_tex = texture_make("data/textures/dot.bmp");
-    if(!dot_tex) {
-        fprintf(stderr, "Error loading dot texture\n");
-        return 1;
-    }
+    if(!dot_tex) return 1;
 
     camera_t *camera = camera_init((float)window_width / window_height, FOV);
-    if(!camera) {
-        fprintf(stderr, "Couldn't create camera\n");
-        return 1;
-    }
+    if(!camera) return 1;
 
     mat4_t model = mat4_identity();
 
@@ -167,53 +147,23 @@ int main() {
 
     vao_bind(NULL);
 
-    text_t *text = text_make(font);
-    if(!text) {
-        fprintf(stderr, "Error making text\n");
-        return 1;
-    }
+    text_t *title = text_make(font, "MineTest OpenGL", (vec3f) { 0.f, 0.f, 0.f });
+    if(!title) return 1;
 
-    text_set(text, "MineTest OpenGL");
+    text_t *block_text = text_make(font, "Block: Grass", (vec3f) { 0.f, 32.f, 0.f });
+    if(!block_text) return 1;
 
-    text_t *block_text = text_make(font);
-    if(!block_text) {
-        fprintf(stderr, "Error making block text\n");
-        return 1;
-    }
+    text_t *mode = text_make(font, "Mode: Default", (vec3f) { 0.f, 64.f, 0.f });
+    if(!mode) return 1;
 
-    text_set(block_text, "Block: Grass");
+    text_t *looking = text_make(font, "Looking at", (vec3f) { 0.f, window_height - 32.f, 0.f });
+    if(!looking) return 1;
 
-    text_t *mode = text_make(font);
-    if(!mode) {
-        fprintf(stderr, "Error making mode text\n");
-        return 1;
-    }
+    text_t *pos_text = text_make(font, "Pos", (vec3f) { 0.f, window_height - 64.f, 0.f });
+    if(!pos_text) return 1;
 
-    text_set(mode, "Mode: Default");
-
-    text_t *looking = text_make(font);
-    if(!looking) {
-        fprintf(stderr, "Error making looking text\n");
-        return 1;
-    }
-
-    text_set(looking, "Looking at");
-
-    text_t *pos_text = text_make(font);
-    if(!pos_text) {
-        fprintf(stderr, "Error making pos text\n");
-        return 1;
-    }
-
-    text_set(pos_text, "Pos");
-
-    text_t *rot_text = text_make(font);
-    if(!rot_text) {
-        fprintf(stderr, "Error making rotation text\n");
-        return 1;
-    }
-
-    text_set(rot_text, "Rot");
+    text_t *rot_text = text_make(font, "Rot", (vec3f) { 0.f, window_height - 96.f, 0.f });
+    if(!rot_text) return 1;
 
     mat4_t cursor_i = mat4_identity();
     mat4_t ui_projection = mat4_orthographic(0.f, window_width, 0.f, window_height, 0.f, 10.f);
@@ -355,7 +305,7 @@ int main() {
 
         if((curr_n - prev_n) >= 500000000) {
             snprintf(fps_buffer, 32, "FPS: %.2f", 1000.f / delta);
-            text_set(text, fps_buffer);
+            text_set(title, fps_buffer);
 
             delay_time = curr;
         }
@@ -541,13 +491,13 @@ int main() {
         // render UI
         glDepthFunc(GL_ALWAYS); 
 
-        shader_use(text_shader);
-        shader_uniform(text_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
+        shader_use(ui_shader);
+        shader_uniform(ui_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
 
         text_m.m[3] = window_width / 2.f;
         text_m.m[7] = window_height / 2.f;
         text_m.m[11] = 0.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
+        shader_uniform(ui_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
 
         glActiveTexture(GL_TEXTURE0);
         texture_bind(dot_tex);
@@ -557,35 +507,12 @@ int main() {
         vbo_bind(&cursor_vio);
         glDrawElements(GL_TRIANGLES, sizeof(CURSOR_INDICES), GL_UNSIGNED_INT, (void*)0);
 
-        text_m.m[3] = 0.f;
-        text_m.m[7] = 0.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(text);
-
-        text_m.m[3] = 0.f;
-        text_m.m[7] = 32.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(block_text);
-
-        text_m.m[3] = 0.f;
-        text_m.m[7] = 64.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(mode);
-
-        text_m.m[3] = 0.f;
-        text_m.m[7] = window_height - 32.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(looking);
-
-        text_m.m[3] = 0.f;
-        text_m.m[7] = window_height - 64.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(rot_text);
-
-        text_m.m[3] = 0.f;
-        text_m.m[7] = window_height - 96.f;
-        shader_uniform(text_shader, "model", UNIFORM_MATRIX_4, 1, text_m.m);
-        text_render(pos_text);
+        text_render(title, ui_shader);
+        text_render(block_text, ui_shader);
+        text_render(mode, ui_shader);
+        text_render(looking, ui_shader);
+        text_render(rot_text, ui_shader);
+        text_render(pos_text, ui_shader);
 
         g_swap_buffers();
     }
@@ -595,7 +522,7 @@ int main() {
     text_destroy(pos_text);
     text_destroy(looking);
     text_destroy(block_text);
-    text_destroy(text);
+    text_destroy(title);
     text_destroy(rot_text);
     text_destroy(mode);
     fontbmp_close(font);
@@ -612,7 +539,7 @@ int main() {
 
     atlas_destroy(atlas);
     world_destroy(world);
-    close_shader(text_shader);
+    close_shader(ui_shader);
     close_shader(shader);
     g_close();
 
