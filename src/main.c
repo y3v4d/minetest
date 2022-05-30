@@ -268,7 +268,7 @@ int main() {
                 camera->aspect = (float)event.window.width / event.window.height;
                 camera_update(camera);
 
-                ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, -100.f, 100.f);
+                ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, 0.f, 100.f);
 
                 window_width = event.window.width;
                 window_height = event.window.height;
@@ -336,8 +336,6 @@ int main() {
             vel.x += cosf(RADIANS(camera->rotation.y)) * move_h;
             vel.z += -sinf(RADIANS(camera->rotation.y)) * move_h;
         }
-
-        
 
         vel.y -= (free_cam ? 0 : 0.01f); // gravity
         if(vel.y < -0.2f) vel.y = -0.2f;
@@ -463,12 +461,7 @@ int main() {
         
         glDepthFunc(GL_LESS); 
 
-        model.m[3] = 0.f;
-        model.m[7] = 0.f;
-        model.m[11] = 0.f;
-
         shader_use(shader);
-        shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
         shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, camera->view.m);
         shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, camera->projection.m);
 

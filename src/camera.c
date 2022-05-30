@@ -48,7 +48,7 @@ void camera_update(camera_t *c) {
     c->view = mat4_mul_mat4(mat4_rotation_y(-c->rotation.y), c->view);
     c->view = mat4_mul_mat4(mat4_rotation_x(-c->rotation.x), c->view);
 
-    mat4_translate(&c->view, 0.f, 0.f, 0.6f);
+    mat4_translate(&c->view, 0.f, 0.f, 1.f);
 
     c->projection = mat4_perspective(c->fov, c->aspect, c->near, c->far); 
 }
