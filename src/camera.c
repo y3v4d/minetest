@@ -1,6 +1,9 @@
 #include "camera.h"
 #include "math/matrix.h"
 
+#include <GL/glew.h>
+#include <GL/glx.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -20,6 +23,8 @@ camera_t* camera_init(float aspect, float fov) {
 
     temp->near = 0.1f;
     temp->far = 10.f;
+
+    temp->mode = CAMERA_MODE_FILL;
 
     camera_update(temp);
 
@@ -51,4 +56,8 @@ void camera_update(camera_t *c) {
     mat4_translate(&c->view, 0.f, 0.f, 1.f);
 
     c->projection = mat4_perspective(c->fov, c->aspect, c->near, c->far); 
+}
+
+void camera_use(const camera_t *c) {
+    glPolygonMode(GL_FRONT_AND_BACK, (c->mode == CAMERA_MODE_FILL ? GL_FILL : GL_LINE));
 }

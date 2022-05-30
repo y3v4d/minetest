@@ -156,13 +156,16 @@ int main() {
     text_t *mode = text_make(font, "Mode: Default", (vec3f) { 0.f, 64.f, 0.f });
     if(!mode) return 1;
 
+    text_t *camera_mode = text_make(font, "Camera Mode: FILL", (vec3f) { 0.f, 96.f, 0.f });
+    if(!camera_mode) return 1;
+
     text_t *looking = text_make(font, "Looking at", (vec3f) { 0.f, window_height - 32.f, 0.f });
     if(!looking) return 1;
 
-    text_t *pos_text = text_make(font, "Pos", (vec3f) { 0.f, window_height - 64.f, 0.f });
+    text_t *pos_text = text_make(font, "Pos", (vec3f) { 0.f, window_height - 96.f, 0.f });
     if(!pos_text) return 1;
 
-    text_t *rot_text = text_make(font, "Rot", (vec3f) { 0.f, window_height - 96.f, 0.f });
+    text_t *rot_text = text_make(font, "Rot", (vec3f) { 0.f, window_height - 64.f, 0.f });
     if(!rot_text) return 1;
 
     mat4_t cursor_i = mat4_identity();
@@ -196,8 +199,6 @@ int main() {
     bool_e test = TRUE;
     bool_e free_cam = FALSE;
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
     // event loop
     event_t event;
     short done = 0;
@@ -226,11 +227,13 @@ int main() {
                 }
 
                 switch(key) {
+                    case 'v':
+                        camera->mode = (camera->mode == CAMERA_MODE_LINE ? CAMERA_MODE_FILL : CAMERA_MODE_LINE);
+                        text_set(camera_mode, (camera->mode == CAMERA_MODE_LINE ? "Camera Mode: LINE" : "Camera Mode: FILL"));
+                        break;
                     case 'f': 
-                        free_cam = !free_cam; 
-                        char s[32];
-                        snprintf(s, 32, "Mode: %s", (free_cam ? "FREE CAM" : "DEFAULT"));
-                        text_set(mode, s);
+                        free_cam = !free_cam;
+                        text_set(mode, (free_cam ? "Mode: FREE CAM" : "Mode: DEFAULT"));
 
                         break;
                     case 't': test = (test ? FALSE : TRUE); break;
@@ -452,7 +455,7 @@ int main() {
         {
             char buff[32];
 
-            snprintf(buff, 32, "Rot %.2f %.2f", camera->position.x, camera->position.y);
+            snprintf(buff, 32, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
             text_set(rot_text, buff);
         }
         
@@ -464,6 +467,8 @@ int main() {
         shader_use(shader);
         shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, camera->view.m);
         shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, camera->projection.m);
+
+        camera_use(camera);
 
         atlas_bind(atlas);
         world_render(world, shader);
@@ -483,6 +488,7 @@ int main() {
 
         // render UI
         glDepthFunc(GL_ALWAYS); 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         shader_use(ui_shader);
         shader_uniform(ui_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
@@ -501,6 +507,7 @@ int main() {
         glDrawElements(GL_TRIANGLES, sizeof(CURSOR_INDICES), GL_UNSIGNED_INT, (void*)0);
 
         text_render(title, ui_shader);
+        text_render(camera_mode, ui_shader);
         text_render(block_text, ui_shader);
         text_render(mode, ui_shader);
         text_render(looking, ui_shader);
@@ -518,6 +525,7 @@ int main() {
     text_destroy(title);
     text_destroy(rot_text);
     text_destroy(mode);
+    text_destroy(camera_mode);
     fontbmp_close(font);
 
     vbo_destroy(&highlight_vbo);
