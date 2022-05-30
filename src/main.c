@@ -33,19 +33,6 @@
 
 #include "world.h"
 
-void GLAPIENTRY
-MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
-{
-    if(type == GL_DEBUG_TYPE_ERROR) {
-        fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-            (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""), type, severity, message);
-    }
-}
-
-float absf(float i) {
-    return (i < 0.f ? i * -1 : i);
-}
-
 const float HIGH_VERTICES[] = {
     0.f,    1.f,    0.f,    4.f,    // 0 - left top front
     1.f,    1.f,    0.f,    4.f,    // 1 - right top front
@@ -84,10 +71,6 @@ int window_height = 480;
 int main() {
     g_init();
     blocks_init();
-
-    glEnable(GL_DEBUG_OUTPUT);
-    glEnable(GL_DEPTH_TEST);
-    glDebugMessageCallback(MessageCallback, 0);
 
     const GLubyte *version = glGetString(GL_VERSION);
     printf("OpenGL version: %s\n", version);
@@ -233,7 +216,7 @@ int main() {
     text_set(rot_text, "Rot");
 
     mat4_t cursor_i = mat4_identity();
-    mat4_t ui_projection = mat4_orthographic(0.f, 640.f, 0.f, 480.f, 0.f, 10.f);
+    mat4_t ui_projection = mat4_orthographic(0.f, window_width, 0.f, window_height, 0.f, 10.f);
 
     mat4_t text_m = mat4_identity();
 
@@ -334,7 +317,7 @@ int main() {
             } else if(event.type == EVENT_WINDOW_RESIZE) {
                 camera->aspect = (float)event.window.width / event.window.height;
                 camera_update(camera);
-                
+
                 ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, -100.f, 100.f);
 
                 window_width = event.window.width;
