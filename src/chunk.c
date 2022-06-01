@@ -8,6 +8,8 @@
 #include "glx/vao.h"
 #include "glx/vbo.h"
 
+#include "utils/types.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

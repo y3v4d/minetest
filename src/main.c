@@ -14,8 +14,8 @@
 #include "glx/texture.h"
 #include "glx/atlas.h"
 
-#include "core/system.h"
-#include "core/event.h"
+#include "sys/system.h"
+#include "sys/event.h"
 
 #include "block.h"
 #include "chunk.h"
@@ -36,14 +36,16 @@
 
 #include "world.h"
 
-#include "stoper.h"
+#include "utils/stoper.h"
+
+#include "utils/types.h"
 
 const float FOV = 60.f;
 int window_width = 1280;
 int window_height = 720;
 
 int main() {
-    g_init();
+    g_init(window_width, window_height);
     blocks_init();
 
     world_t *world = world_init();
@@ -67,6 +69,9 @@ int main() {
     camera_t *camera = camera_init(CAMERA_PROJECTION_PERSPECTIVE, (float)window_width / window_height, FOV);
     if(!camera) return 1;
 
+    camera->offset = F2VEC3F(0.f, 0.f, 1.f);
+    camera->position = F2VEC3F(0.f, 7.5f, 0.f);
+
     highlight_t *highlight = highlight_create();
     if(!highlight) return 1;
 
@@ -75,22 +80,22 @@ int main() {
 
     s_cursor->texture = dot_tex;
 
-    text_t *title = text_make(font, "MineTest OpenGL", (vec3f) { 0.f, 0.f, 0.f });
+    text_t *title = text_make(font, "MineTest OpenGL", F2VEC3F(0.f, 0.f, 0.f));
     if(!title) return 1;
 
-    text_t *block_text = text_make(font, "Block: Grass", (vec3f) { 0.f, 32.f, 0.f });
+    text_t *block_text = text_make(font, "Block: Grass", F2VEC3F(0.f, 32.f, 0.f));
     if(!block_text) return 1;
 
-    text_t *mode = text_make(font, "Mode: Default", (vec3f) { 0.f, 64.f, 0.f });
+    text_t *mode = text_make(font, "Mode: Default", F2VEC3F(0.f, 64.f, 0.f));
     if(!mode) return 1;
 
-    text_t *camera_mode = text_make(font, "Camera Mode: FILL", (vec3f) { 0.f, 96.f, 0.f });
+    text_t *camera_mode = text_make(font, "Camera Mode: FILL", F2VEC3F(0.f, 96.f, 0.f));
     if(!camera_mode) return 1;
 
-    text_t *looking = text_make(font, "Looking at", (vec3f) { 0.f, window_height - 32.f, 0.f });
+    text_t *looking = text_make(font, "Looking at", F2VEC3F(0.f, window_height - 32.f, 0.f));
     if(!looking) return 1;
 
-    text_t *pos_text = text_make(font, "Pos", (vec3f) { 0.f, window_height - 96.f, 0.f });
+    text_t *pos_text = text_make(font, "Pos", F2VEC3F(0.f, window_height - 96.f, 0.f));
     if(!pos_text) return 1;
 
     text_t *rot_text = text_make(font, "Rot", (vec3f) { 0.f, window_height - 64.f, 0.f });
@@ -285,16 +290,7 @@ int main() {
         vec3f_add(&camera->position, vel);
 
         camera_update(camera);
-        get_block_with_ray(world, &camera->position, &camera->facing, &ray);
-
-        if(ray.valid) {
-            char buff[32];
-
-            snprintf(buff, 32, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
-            text_set(looking, buff);
-        } else {
-            text_set(looking, "Looking at - - -");
-        }
+        get_block_with_ray(world, camera->position, camera->facing, &ray);
 
         if(lock_mouse) {
             g_lock_mouse();
@@ -303,23 +299,33 @@ int main() {
         }
 
         {
-            char buff[32];
+            char buff[64];
 
-            snprintf(buff, 32, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
+            snprintf(buff, 64, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
             text_set(pos_text, buff);
+        }
 
-            snprintf(buff, 32, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
+        {
+            char buff[64];
+
+            snprintf(buff, 64, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
             text_set(rot_text, buff);
+        }
 
-            snprintf(buff, 32, "FPS: %.2f", 1000.f / dt_stoper.delta);
+        {
+            char buff[64];
+
+            snprintf(buff, 64, "FPS: %.2f", 1000.f / dt_stoper.delta);
             text_set(title, buff);
+        }
 
-            if(ray.valid) {
-                snprintf(buff, 32, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
-                text_set(looking, buff);
-            } else {
-                text_set(looking, "Looking at - - -");
-            }
+        if(ray.valid) {
+            char buff[64];
+
+            snprintf(buff, 64, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
+            text_set(looking, buff);
+        } else {
+            text_set(looking, "Looking at - - -");
         }
         
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);

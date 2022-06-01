@@ -1,9 +1,9 @@
 #ifndef __SYSTEM_H__
 #define __SYSTEM_H__
 
-#include "core/event.h"
+#include "sys/event.h"
 
-void g_init();
+void g_init(int width, int height);
 void g_close();
 
 void g_swap_buffers();

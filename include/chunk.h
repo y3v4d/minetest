@@ -9,7 +9,6 @@
 #include "mesh.h"
 
 #include "math/vec.h"
-#include "constants.h"
 
 #define CHUNK_SIZE_X 16
 #define CHUNK_SIZE_Y 16

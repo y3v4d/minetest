@@ -12,6 +12,6 @@ typedef struct {
     int valid;
 } raydata_t;
 
-void get_block_with_ray(const world_t *w, const vec3f *pos, const vec3f *facing, raydata_t *output);
+void get_block_with_ray(const world_t *w, vec3f pos, vec3f facing, raydata_t *output);
 
 #endif

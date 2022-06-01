@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "direction.h"
-#include "glx/vbo.h"
+#include "utils/types.h"
 
 typedef enum {
     BLOCK_AIR = 0,

@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 #include <GL/glx.h>
 
-typedef enum { FALSE, TRUE } bool_e;
+#include "utils/types.h"
 
 typedef struct {
     GLuint ID;

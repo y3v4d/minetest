@@ -1,5 +1,4 @@
-#include "core/system.h"
-#include "constants.h"
+#include "sys/system.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,7 +40,7 @@ Bool x_expose_occurred = False;
 int x_last_width = -1;
 int x_last_height = -1;
 
-void g_init() {
+void g_init(int width, int height) {
     // open new display connection
     display = XOpenDisplay(NULL);
     if(!display) {
@@ -123,7 +122,7 @@ void g_init() {
             display,                                                    // display
             XRootWindow(display, vi->screen),                           // root window
             0, 0,                                                       // window position
-            WINDOW_WIDTH, WINDOW_HEIGHT,                                // window size
+            width, height,                                              // window size
             0,                                                          // border size
             vi->depth,                                                  // depth
             InputOutput,                                                // window flags

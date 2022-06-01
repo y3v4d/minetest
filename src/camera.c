@@ -18,6 +18,8 @@ camera_t* camera_init(uint8_t projection, float aspect, float fov) {
     temp->position = F2VEC3F(0.f, 0.f, 0.f);
     temp->rotation = F2VEC3F(0.f, 0.f, 0.f);
 
+    temp->offset = F2VEC3F(0.f, 0.f, 0.f);
+
     temp->aspect = aspect;
     temp->fov = fov;
 
@@ -56,7 +58,7 @@ void camera_update(camera_t *c) {
     if(c->rotation.y != 0) c->view = mat4_mul_mat4(mat4_rotation_y(-c->rotation.y), c->view);
     if(c->rotation.x != 0) c->view = mat4_mul_mat4(mat4_rotation_x(-c->rotation.x), c->view);
 
-    //mat4_translate(&c->view, F2VEC3F(0.f, 0.f, 1.f));
+    mat4_translate(&c->view, c->offset);
 
     if(c->projection_type == CAMERA_PROJECTION_PERSPECTIVE) 
         c->projection = mat4_perspective(c->fov, c->aspect, c->near, c->far);

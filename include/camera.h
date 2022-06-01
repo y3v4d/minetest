@@ -21,6 +21,7 @@ typedef struct {
 
 typedef struct {
     vec3f position, rotation;
+    vec3f offset;
     float aspect, fov, near, far;
 
     camera_metrics_t metrics;
