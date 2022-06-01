@@ -1,6 +1,11 @@
 #include "math/vec.h"
 #include <math.h>
 
+void vec2f_add(vec2f *self, vec2f other) {
+    self->x += other.x;
+    self->y += other.y;
+}
+
 float vec2f_magnitude(vec2f v) {
     return sqrtf(v.x * v.x + v.y * v.y);
 }
@@ -10,6 +15,12 @@ vec2f vec2f_normalize(vec2f v) {
 
     if(m == 0) return (vec2f){ 0, 0 };
     else return (vec2f) { v.x / m, v.y / m };
+}
+
+void vec3f_add(vec3f *self, vec3f other) {
+    self->x += other.x;
+    self->y += other.y;
+    self->z += other.z;
 }
 
 float vec3f_magnitude(vec3f v) {

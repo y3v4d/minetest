@@ -64,14 +64,8 @@ void highlight_destroy(highlight_t *p) {
 
 void highlight_render(highlight_t *self, shader_t *shader) {
     vao_bind(&self->vao);
-    vbo_bind(&self->vbo);
-    vbo_bind(&self->vio);
 
-    self->model = mat4_translation(
-        self->position.x, 
-        self->position.y, 
-        self->position.z
-    );
+    self->model = mat4_translation(self->position);
 
     shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, self->model.m);
     glDrawElements(GL_LINES, sizeof(HIGHLIGHT_INDICES), GL_UNSIGNED_INT, (void*)0);

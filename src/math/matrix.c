@@ -59,11 +59,11 @@ mat4_t mat4_orthographic(float left, float right, float top, float bottom, float
     };
 }
 
-mat4_t mat4_translation(float x, float y, float z) {
+mat4_t mat4_translation(vec3f offset) {
     return (mat4_t) {
-        1.f, 0.f, 0.f, x,
-        0.f, 1.f, 0.f, y,
-        0.f, 0.f, 1.f, z,
+        1.f, 0.f, 0.f, offset.x,
+        0.f, 1.f, 0.f, offset.y,
+        0.f, 0.f, 1.f, offset.z,
         0.f, 0.f, 0.f, 1.f
     };
 }
@@ -95,8 +95,8 @@ mat4_t mat4_rotation_z(float angle) {
     };
 }
 
-void mat4_translate(mat4_t *m, float x, float y, float z) {
-    const float coords[3] = { x, y, z };
+void mat4_translate(mat4_t *m, vec3f offset) {
+    const float coords[3] = { offset.x, offset.y, offset.z };
     float *p = m->m;
 
     for(int i = 0; i < 3; ++i) {

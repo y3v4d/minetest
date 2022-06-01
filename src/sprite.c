@@ -25,13 +25,14 @@ sprite_t* sprite_init(vec3f position) {
     }
 
     temp->position = position;
-    temp->model = mat4_translation(position.x, position.y, position.z);
+    temp->model = mat4_translation(position);
 
     temp->vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
     temp->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
     temp->vao = vao_generate();
 
     vao_bind(&temp->vao);
+    
     vbo_bind(&temp->vbo);
     vbo_data(&temp->vbo, sizeof(DATA), DATA);
 
@@ -58,8 +59,6 @@ void sprite_destroy(sprite_t* p) {
 
 void sprite_render(sprite_t *self, const shader_t *shader) {
     vao_bind(&self->vao);
-    vbo_bind(&self->vbo);
-    vbo_bind(&self->vio);
 
     glActiveTexture(GL_TEXTURE0);
     texture_bind(self->texture);

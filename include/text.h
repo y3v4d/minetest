@@ -11,6 +11,8 @@
 
 #include "glx/shader.h"
 
+#include "mesh.h"
+
 #include "utils/font_loader.h"
 
 #define TEXT_UPDATE_POSITION 0b0001
@@ -21,18 +23,7 @@ typedef struct {
     const char *text;
     fontbmp_t *font;
 
-    float *vertices;
-    int vertices_count;
-
-    unsigned *indices;
-    int indices_count;
-
-    int mesh_counter;
-
-    vbo_t vbo;
-    vbo_t vio;
-    vao_t vao;
-
+    mesh_t *mesh;
     mat4_t model;
 } text_t;
 

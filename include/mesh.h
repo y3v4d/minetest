@@ -19,7 +19,7 @@ typedef struct _mesh_s {
     vao_t vao;
 } mesh_t;
 
-mesh_t* mesh_init();
+mesh_t* mesh_init(size_t vertex_capacity, size_t index_capacity);
 void mesh_destroy(mesh_t *m);
 
 void mesh_prepare(mesh_t *m);

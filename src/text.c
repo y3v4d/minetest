@@ -3,6 +3,7 @@
 #include "glx/shader.h"
 #include "glx/vao.h"
 #include "glx/vbo.h"
+#include "mesh.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,25 +27,21 @@ text_t* text_make(fontbmp_t *font, const char *string, vec3f position) {
 
     temp->font = font;
 
-    temp->vertices = (float*)malloc(sizeof(float) * MAX_TEXT_LENGTH * 4 * 5);
-    temp->indices = (unsigned*)malloc(sizeof(unsigned) * MAX_TEXT_LENGTH * 6);
+    temp->mesh = mesh_init(MAX_TEXT_LENGTH * 4 * 5, MAX_TEXT_LENGTH * 6);
 
-    temp->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
-    temp->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
-    temp->vao = vao_generate();
-
-    vao_bind(&temp->vao);
-    vbo_bind(&temp->vbo);
-    vbo_bind(&temp->vio);
+    vao_bind(&temp->mesh->vao);
+    vbo_bind(&temp->mesh->vbo);
+    vbo_bind(&temp->mesh->vio);
 
     vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    
     vao_bind(NULL);
 
     text_set(temp, string);
 
     temp->position = position;
-    temp->model = mat4_translation(position.x, position.y, position.z);
+    temp->model = mat4_translation(position);
 
     return temp;
 }
@@ -52,15 +49,7 @@ text_t* text_make(fontbmp_t *font, const char *string, vec3f position) {
 void text_destroy(text_t *p) {
     if(!p) return;
 
-    p->vertices_count = 0;
-    p->indices_count = 0;
-
-    free(p->vertices);
-    free(p->indices);
-
-    vbo_destroy(&p->vbo);
-    vbo_destroy(&p->vio);
-    vao_destroy(&p->vao);
+    mesh_destroy(p->mesh);
 
     free(p);
 }
@@ -87,38 +76,39 @@ void emit_character(text_t *p, char c, int *x, int *y) {
     }
 
     // emit vertices
-    float *v = p->vertices;
+    mesh_t *mesh = p->mesh;
+    float *vd = (float*)mesh->vertices->data;
 
-    v[p->mesh_counter++] = *x + found->xoff + 0.f;
-    v[p->mesh_counter++] = *y + found->yoff + 0.f;
-    v[p->mesh_counter++] = 0.f;
-    v[p->mesh_counter++] = (float)found->x / font->texture->width;
-    v[p->mesh_counter++] = 1.f - (float)found->y / font->texture->height;
+    vd[mesh->vertex_counter++] = *x + found->xoff + 0.f;
+    vd[mesh->vertex_counter++] = *y + found->yoff + 0.f;
+    vd[mesh->vertex_counter++] = 0.f;
+    vd[mesh->vertex_counter++] = (float)found->x / font->texture->width;
+    vd[mesh->vertex_counter++] = 1.f - (float)found->y / font->texture->height;
 
-    v[p->mesh_counter++] = *x + found->xoff + (float)found->w;
-    v[p->mesh_counter++] = *y + found->yoff + 0.f;
-    v[p->mesh_counter++] = 0.f;
-    v[p->mesh_counter++] = (float)(found->x + found->w) / font->texture->width;
-    v[p->mesh_counter++] = 1.f - (float)found->y / font->texture->height;
+    vd[mesh->vertex_counter++] = *x + found->xoff + (float)found->w;
+    vd[mesh->vertex_counter++] = *y + found->yoff + 0.f;
+    vd[mesh->vertex_counter++] = 0.f;
+    vd[mesh->vertex_counter++] = (float)(found->x + found->w) / font->texture->width;
+    vd[mesh->vertex_counter++] = 1.f - (float)found->y / font->texture->height;
 
-    v[p->mesh_counter++] = *x + found->xoff + (float)found->w;
-    v[p->mesh_counter++] = *y + found->yoff + (float)found->h;
-    v[p->mesh_counter++] = 0.f;
-    v[p->mesh_counter++] = (float)(found->x + found->w) / font->texture->width;
-    v[p->mesh_counter++] = 1.f - (float)(found->y + found->h) / font->texture->height;
+    vd[mesh->vertex_counter++] = *x + found->xoff + (float)found->w;
+    vd[mesh->vertex_counter++] = *y + found->yoff + (float)found->h;
+    vd[mesh->vertex_counter++] = 0.f;
+    vd[mesh->vertex_counter++] = (float)(found->x + found->w) / font->texture->width;
+    vd[mesh->vertex_counter++] = 1.f - (float)(found->y + found->h) / font->texture->height;
 
-    v[p->mesh_counter++] = *x + found->xoff + 0.f;
-    v[p->mesh_counter++] = *y + found->yoff + (float)found->h;
-    v[p->mesh_counter++] = 0.f;
-    v[p->mesh_counter++] = (float)found->x / font->texture->width;
-    v[p->mesh_counter++] = 1.f - (float)(found->y + found->h) / font->texture->height;
+    vd[mesh->vertex_counter++] = *x + found->xoff + 0.f;
+    vd[mesh->vertex_counter++] = *y + found->yoff + (float)found->h;
+    vd[mesh->vertex_counter++] = 0.f;
+    vd[mesh->vertex_counter++] = (float)found->x / font->texture->width;
+    vd[mesh->vertex_counter++] = 1.f - (float)(found->y + found->h) / font->texture->height;
 
     // emit indices
     for(int i = 0; i < 6; ++i) {
-        p->indices[p->indices_count++] = p->vertices_count + TEXT_INDICES[i];
+        ((unsigned*)mesh->indices->data)[mesh->indices->index++] = mesh->vertices->index + TEXT_INDICES[i];
     }
 
-    p->vertices_count += 4;
+    mesh->vertices->index += 4;
 
     *x += found->xadv;
 }
@@ -126,35 +116,28 @@ void emit_character(text_t *p, char c, int *x, int *y) {
 void text_set(text_t *p, const char *string) {
     p->text = string;
 
-    p->vertices_count = 0;
-    p->indices_count = 0;
-    p->mesh_counter = 0;
+    mesh_prepare(p->mesh);
 
     int x = 0, y = 0;
     for(int i = 0; string[i] != 0; ++i) {
         emit_character(p, string[i], &x, &y);
     }
 
-    vbo_bind(&p->vbo);
-    vbo_data(&p->vbo, p->mesh_counter * sizeof(float), p->vertices);
-    vbo_bind(&p->vio);
-    vbo_data(&p->vio, p->indices_count * sizeof(unsigned), p->indices);
+    mesh_finalize(p->mesh);
 }
 
 void text_update(text_t *p, uint32_t flag) {
     if(flag & TEXT_UPDATE_POSITION) {
-        mat4_translate(&p->model, p->position.x, p->position.y, p->position.z);
+        mat4_translate(&p->model, p->position);
     }
 }
 
 void text_render(text_t *p, const shader_t *shader) {
-    vao_bind(&p->vao);
-    vbo_bind(&p->vbo);
-    vbo_bind(&p->vio);
+    shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, p->model.m);
 
     glActiveTexture(GL_TEXTURE0);
     texture_bind(p->font->texture);
 
-    shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, p->model.m);
-    glDrawElements(GL_TRIANGLES, p->indices_count, GL_UNSIGNED_INT, (void*)0);
+    vao_bind(&p->mesh->vao);
+    glDrawElements(GL_TRIANGLES, p->mesh->indices->index, GL_UNSIGNED_INT, (void*)0);
 }

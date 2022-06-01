@@ -38,8 +38,6 @@
 
 #include "stoper.h"
 
-
-
 const float FOV = 60.f;
 int window_width = 1280;
 int window_height = 720;
@@ -66,13 +64,13 @@ int main() {
     texture_t *dot_tex = texture_make("data/textures/dot.bmp");
     if(!dot_tex) return 1;
 
-    camera_t *camera = camera_init((float)window_width / window_height, FOV);
+    camera_t *camera = camera_init(CAMERA_PROJECTION_PERSPECTIVE, (float)window_width / window_height, FOV);
     if(!camera) return 1;
 
     highlight_t *highlight = highlight_create();
     if(!highlight) return 1;
 
-    sprite_t *s_cursor = sprite_init((vec3f) { (float)window_width / 2, (float)window_height / 2, 0.f });
+    sprite_t *s_cursor = sprite_init(F2VEC3F((float)window_width / 2, (float)window_height / 2, 0.f));
     if(!s_cursor) return 1;
 
     s_cursor->texture = dot_tex;
@@ -98,12 +96,8 @@ int main() {
     text_t *rot_text = text_make(font, "Rot", (vec3f) { 0.f, window_height - 64.f, 0.f });
     if(!rot_text) return 1;
 
-    mat4_t cursor_i = mat4_identity();
-    mat4_t ui_projection = mat4_orthographic(0.f, window_width, 0.f, window_height, 0.f, 10.f);
-
-    mat4_t text_m = mat4_identity();
-
-    mat4_t model = mat4_identity();
+    camera_t *ui_camera = camera_init(CAMERA_PROJECTION_ORTHOGRAPHIC, 0.f, 0.f);
+    if(!ui_camera) return 1;
 
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
@@ -219,7 +213,15 @@ int main() {
                 camera->aspect = (float)event.window.width / event.window.height;
                 camera_update(camera);
 
-                ui_projection = mat4_orthographic(0.f, (float)event.window.width, 0.f, (float)event.window.height, 0.f, 100.f);
+                ui_camera->metrics = (camera_metrics_t) {
+                    .left = 0.f,
+                    .right = (float)event.window.width,
+                    .top = 0.f,
+                    .bottom = (float)event.window.height
+                };
+                ui_camera->near = 0.f;
+                ui_camera->far = 100.f;
+                camera_update(ui_camera);
 
                 window_width = event.window.width;
                 window_height = event.window.height;
@@ -241,15 +243,8 @@ int main() {
         }
 
         // delta time
-        {
-            stoper_end(&dt_stoper);
-            const float delta = dt_stoper.delta;
-            stoper_start(&dt_stoper);
-
-            char buffer[32];
-            snprintf(buffer, 32, "FPS: %.2f", 1000.f / delta);
-            text_set(title, buffer);
-        }
+        stoper_end(&dt_stoper);
+        stoper_start(&dt_stoper);
 
         // handle rotation with mouse movement
         dm_x = m_x - pm_x;
@@ -282,14 +277,12 @@ int main() {
         //if(vel.y < -0.2f) vel.y = -0.2f;
 
         {
-            vec2f n = vec2f_normalize((vec2f){vel.x, vel.z});
+            vec2f n = vec2f_normalize(F2VEC2F(vel.x, vel.z));
             vel.x = n.x * SPEED;
             vel.z = n.y * SPEED;
         }
 
-        camera->position.x += vel.x;
-        camera->position.y += vel.y;
-        camera->position.z += vel.z;
+        vec3f_add(&camera->position, vel);
 
         camera_update(camera);
         get_block_with_ray(world, &camera->position, &camera->facing, &ray);
@@ -314,13 +307,19 @@ int main() {
 
             snprintf(buff, 32, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
             text_set(pos_text, buff);
-        }
-
-        {
-            char buff[32];
 
             snprintf(buff, 32, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
             text_set(rot_text, buff);
+
+            snprintf(buff, 32, "FPS: %.2f", 1000.f / dt_stoper.delta);
+            text_set(title, buff);
+
+            if(ray.valid) {
+                snprintf(buff, 32, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
+                text_set(looking, buff);
+            } else {
+                text_set(looking, "Looking at - - -");
+            }
         }
         
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
@@ -329,10 +328,7 @@ int main() {
         glDepthFunc(GL_LESS); 
 
         shader_use(shader);
-        shader_uniform(shader, "view", UNIFORM_MATRIX_4, 1, camera->view.m);
-        shader_uniform(shader, "projection", UNIFORM_MATRIX_4, 1, camera->projection.m);
-
-        camera_use(camera);
+        camera_use(camera, shader);
 
         atlas_bind(atlas);
         world_render(world, shader);
@@ -344,10 +340,9 @@ int main() {
 
         // render UI
         glDepthFunc(GL_ALWAYS); 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         shader_use(ui_shader);
-        shader_uniform(ui_shader, "projection", UNIFORM_MATRIX_4, 1, ui_projection.m);
+        camera_use(ui_camera, ui_shader);
 
         sprite_render(s_cursor, ui_shader);
 
@@ -377,6 +372,7 @@ int main() {
 
     highlight_destroy(highlight);
 
+    camera_destroy(ui_camera);
     camera_destroy(camera);
 
     atlas_destroy(atlas);

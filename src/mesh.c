@@ -4,22 +4,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-mesh_t* mesh_init() {
-    const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
-    
+mesh_t* mesh_init(size_t vertex_capacity, size_t index_capacity) {
     mesh_t *temp = (mesh_t*)malloc(sizeof(mesh_t));
     if(!temp) {
         fprintf(stderr, "Couldn't allocate memory for the mesh\n");
         return NULL;
     }
 
-    temp->vertices = mesh_buffer_init(SIZE * 6 * 6 * 4, sizeof(float));
+    temp->vertices = mesh_buffer_init(vertex_capacity, sizeof(float));
     if(!temp->vertices) {
         mesh_destroy(temp);
         return NULL;
     }
 
-    temp->indices = mesh_buffer_init(SIZE * 6 * 6, sizeof(unsigned));
+    temp->indices = mesh_buffer_init(index_capacity, sizeof(unsigned));
     if(!temp->indices) {
         mesh_destroy(temp);
         return NULL;
@@ -30,15 +28,6 @@ mesh_t* mesh_init() {
     temp->vbo = vbo_generate(GL_ARRAY_BUFFER, TRUE);
     temp->vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, TRUE);
     temp->vao = vao_generate();
-
-    vao_bind(&temp->vao);
-    vbo_bind(&temp->vbo);
-    vbo_bind(&temp->vio);
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-
-    vao_bind(NULL);
 
     return temp;
 }

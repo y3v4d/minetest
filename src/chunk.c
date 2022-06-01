@@ -45,34 +45,45 @@ chunk_t *chunk_init(world_t *world, int x, int z) {
     memset(p, 0, sizeof(chunk_t));
 
     p->world = world;
-
-    p->position.x = x;
-    p->position.y = z;
+    p->position = I2VEC2I(x, z);
 
     const size_t SIZE = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
-    p->data = (uint8_t*)malloc(sizeof(uint8_t) * SIZE);
+    const size_t VERTEX_CAPACITY = SIZE * 6 * 6 * 4;
+    const size_t INDEX_CAPACITY = SIZE * 6 * 6;
 
-    p->meshes.base = mesh_init();
-    p->meshes.transparent = mesh_init();
+    p->data = (uint8_t*)malloc(sizeof(uint8_t) * SIZE);
+    p->meshes.base = mesh_init(VERTEX_CAPACITY, INDEX_CAPACITY);
+    p->meshes.transparent = mesh_init(VERTEX_CAPACITY, INDEX_CAPACITY);
+
+    mesh_t* meshes[2] = { p->meshes.base, p->meshes.transparent };
+    for(int i = 0; i < 2; ++i) {
+        vao_bind(&meshes[i]->vao);
+        vbo_bind(&meshes[i]->vbo);
+        vbo_bind(&meshes[i]->vio);
+        
+        vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+        vao_attribute(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+    }
+    vao_bind(NULL);
 
     /*memset(p->data, BLOCK_STONE, 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 4 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_DIRT, CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 5 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_GRASS, CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_AIR, SIZE - 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);*/
 
-    memset(p->data, BLOCK_PLANK, 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    memset(p->data, BLOCK_DIRT, 5 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
+    memset(p->data + 5 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_GRASS, CHUNK_SIZE_X * CHUNK_SIZE_Z);
     memset(p->data + 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z, BLOCK_AIR, SIZE - 6 * CHUNK_SIZE_X * CHUNK_SIZE_Z);
 
-    for(int y = 0; y < 6; ++y) {
-        for(int x = 0; x < CHUNK_SIZE_X; ++x) {
-            p->data[y * CHUNK_SIZE_X * CHUNK_SIZE_Z + x] = BLOCK_WOOD;
-            p->data[y * CHUNK_SIZE_X * CHUNK_SIZE_Z + 15 * CHUNK_SIZE_Z + x] = BLOCK_WOOD;
-        }
+    for(int x = 0; x < CHUNK_SIZE_X; ++x) {
+        p->data[5 * CHUNK_SIZE_X * CHUNK_SIZE_Z + x] = BLOCK_GRANIT;
+        p->data[5 * CHUNK_SIZE_X * CHUNK_SIZE_Z + 15 * CHUNK_SIZE_Z + x] = BLOCK_GRANIT;
+    }
 
-        for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
-            p->data[y * CHUNK_SIZE_Z * CHUNK_SIZE_X + CHUNK_SIZE_X * z] = BLOCK_WOOD;
-            p->data[y * CHUNK_SIZE_Z * CHUNK_SIZE_X + 15 + CHUNK_SIZE_X * z] = BLOCK_WOOD;
-        }
+    for(int z = 0; z < CHUNK_SIZE_Z; ++z) {
+        p->data[5 * CHUNK_SIZE_Z * CHUNK_SIZE_X + CHUNK_SIZE_X * z] = BLOCK_GRANIT;
+        p->data[5 * CHUNK_SIZE_Z * CHUNK_SIZE_X + 15 + CHUNK_SIZE_X * z] = BLOCK_GRANIT;
     }
 
     return p;
@@ -94,14 +105,14 @@ void emit_face(chunk_t *p, int x, int y, int z, direction_e d, uint8_t block_id)
     // emit vertices
     for(int i = 0; i < 4; ++i) {
         const float *v = &CUBE_VERTICES[CUBE_INDICES[d * 6 + i] * 3];
+        float *vd = (float*)mesh->vertices->data;
 
-        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = x + v[0];
-        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = y + v[1];
-        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = z + v[2];
-        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = TEX_UV[i * 2];
-        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = TEX_UV[i * 2 + 1];
-
-        ((float*)mesh->vertices->data)[mesh->vertex_counter++] = BLOCKS[block_id].get_texture_face(d);
+        vd[mesh->vertex_counter++] = x + v[0];
+        vd[mesh->vertex_counter++] = y + v[1];
+        vd[mesh->vertex_counter++] = z + v[2];
+        vd[mesh->vertex_counter++] = TEX_UV[i * 2];
+        vd[mesh->vertex_counter++] = TEX_UV[i * 2 + 1];
+        vd[mesh->vertex_counter++] = BLOCKS[block_id].get_texture_face(d);
     }
 
     // emit indices
@@ -211,7 +222,7 @@ void prepare_chunk(chunk_t *p) {
 }
 
 void chunk_render(chunk_t *p, shader_t *s) {
-    mat4_t model = mat4_translation(p->position.x * CHUNK_SIZE_X, 0, p->position.y * CHUNK_SIZE_Z);
+    mat4_t model = mat4_translation(F2VEC3F(p->position.x * CHUNK_SIZE_X, 0, p->position.y * CHUNK_SIZE_Z));
     shader_uniform(s, "model", UNIFORM_MATRIX_4, 1, model.m);
 
     vao_bind(&p->meshes.base->vao);
