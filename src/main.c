@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>
+
 
 #include <GL/glew.h>
 #include <GL/glx.h>
@@ -19,6 +19,7 @@
 
 #include "block.h"
 #include "chunk.h"
+#include "highlight.h"
 #include "text.h"
 #include "ray.h"
 
@@ -35,23 +36,9 @@
 
 #include "world.h"
 
-const float HIGH_VERTICES[] = {
-    0.f,    1.f,    0.f,    4.f,    // 0 - left top front
-    1.f,    1.f,    0.f,    4.f,    // 1 - right top front
-    1.f,    0.f,    0.f,    4.f,    // 2 - right bottom front
-    0.f,    0.f,    0.f,    4.f,    // 3 - left bottom front
+#include "stoper.h"
 
-    1.f,    1.f,    -1.f,    4.f,   // 4 - right top back
-    0.f,    1.f,    -1.f,    4.f,   // 5 - left top back
-    0.f,    0.f,    -1.f,    4.f,   // 6 - left bottom back
-    1.f,    0.f,    -1.f,    4.f,   // 7 - right bottom back
-};
 
-const unsigned HIGH_INDICES[] = {
-    0, 1, 1, 4, 4, 5, 5, 0,
-    3, 2, 2, 7, 7, 6, 6, 3,
-    0, 3, 1, 2, 4, 7, 5, 6
-};
 
 const float FOV = 60.f;
 int window_width = 1280;
@@ -60,9 +47,6 @@ int window_height = 720;
 int main() {
     g_init();
     blocks_init();
-
-    const GLubyte *version = glGetString(GL_VERSION);
-    printf("OpenGL version: %s\n", version);
 
     world_t *world = world_init();
     if(!world) return 1;
@@ -85,40 +69,8 @@ int main() {
     camera_t *camera = camera_init((float)window_width / window_height, FOV);
     if(!camera) return 1;
 
-    mat4_t model = mat4_identity();
-
-    const float SPEED = 0.1f;
-    const float ROTATION_SPEED = 0.001f;
-
-    vec3f vel = { 0.f, 0.f, 0.f };
-
-    float m_x = 0.0f;
-    float m_y = 0.0f;
-
-    float pm_x = -1.0f;
-    float pm_y = -1.0f;
-
-    float dm_x = 0.0f;
-    float dm_y = 0.0f;
-
-    int move = 0;
-    int move_h = 0;
-
-    vbo_t highlight_vio = vbo_generate(GL_ELEMENT_ARRAY_BUFFER, FALSE);
-    vbo_t highlight_vbo = vbo_generate(GL_ARRAY_BUFFER, FALSE);
-    vao_t highlight_vao = vao_generate();
-
-    vao_bind(&highlight_vao);
-    vbo_bind(&highlight_vbo);
-    vbo_data(&highlight_vbo, sizeof(HIGH_VERTICES), HIGH_VERTICES);
-
-    vbo_bind(&highlight_vio);
-    vbo_data(&highlight_vio, sizeof(HIGH_INDICES), HIGH_INDICES);
-
-    vao_attribute(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    vao_attribute(2, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(3 * sizeof(float)));
-
-    vao_bind(NULL);
+    highlight_t *highlight = highlight_create();
+    if(!highlight) return 1;
 
     sprite_t *s_cursor = sprite_init((vec3f) { (float)window_width / 2, (float)window_height / 2, 0.f });
     if(!s_cursor) return 1;
@@ -151,6 +103,28 @@ int main() {
 
     mat4_t text_m = mat4_identity();
 
+    mat4_t model = mat4_identity();
+
+    const float SPEED = 0.1f;
+    const float ROTATION_SPEED = 0.001f;
+
+    vec3f vel = { 0.f, 0.f, 0.f };
+
+    float m_x = 0.0f;
+    float m_y = 0.0f;
+
+    float pm_x = -1.0f;
+    float pm_y = -1.0f;
+
+    float dm_x = 0.0f;
+    float dm_y = 0.0f;
+
+    int move = 0;
+    int move_h = 0;
+
+    const GLubyte *version = glGetString(GL_VERSION);
+    printf("OpenGL version: %s\n", version);
+
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
 
@@ -163,11 +137,7 @@ int main() {
 
     glLineWidth(1.f);
 
-    char fps_buffer[32];
-    struct timespec prev_time;
-
-    struct timespec delay_time;
-    clock_gettime(CLOCK_REALTIME, &delay_time);
+    stoper_t dt_stoper;
 
     raydata_t ray;
     uint8_t current_block = BLOCK_GRASS;
@@ -230,7 +200,7 @@ int main() {
                     case 'a': move_h = -1; break;
                     case 'd': move_h = 1; break;
                     case ' ':
-                        if(!free_cam) vel.y = 0.2f;
+                        //if(!free_cam) vel.y = 0.2f;
                         break;
                     default: break;
                 }
@@ -271,24 +241,14 @@ int main() {
         }
 
         // delta time
-        struct timespec curr;
-        clock_gettime(CLOCK_REALTIME, &curr);
+        {
+            stoper_end(&dt_stoper);
+            const float delta = dt_stoper.delta;
+            stoper_start(&dt_stoper);
 
-        long curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
-        long prev_n = prev_time.tv_sec * 1000000000 + prev_time.tv_nsec;
-
-        float delta = (float)(curr_n - prev_n) / 1000000;
-        prev_time = curr;
-
-        clock_gettime(CLOCK_REALTIME, &curr);
-        curr_n = curr.tv_sec * 1000000000 + curr.tv_nsec;
-        prev_n = delay_time.tv_sec * 1000000000 + delay_time.tv_nsec;
-
-        if((curr_n - prev_n) >= 500000000) {
-            snprintf(fps_buffer, 32, "FPS: %.2f", 1000.f / delta);
-            text_set(title, fps_buffer);
-
-            delay_time = curr;
+            char buffer[32];
+            snprintf(buffer, 32, "FPS: %.2f", 1000.f / delta);
+            text_set(title, buffer);
         }
 
         // handle rotation with mouse movement
@@ -318,8 +278,8 @@ int main() {
             vel.z += -sinf(RADIANS(camera->rotation.y)) * move_h;
         }
 
-        vel.y -= (free_cam ? 0 : 0.01f); // gravity
-        if(vel.y < -0.2f) vel.y = -0.2f;
+        //vel.y -= (free_cam ? 0 : 0.01f); // gravity
+        //if(vel.y < -0.2f) vel.y = -0.2f;
 
         {
             vec2f n = vec2f_normalize((vec2f){vel.x, vel.z});
@@ -327,83 +287,9 @@ int main() {
             vel.z = n.y * SPEED;
         }
 
-        const float size_w = 0.3f;
-        vec3f dir = {
-            vel.x >= 0 ? 1 : -1,
-            0,
-            vel.z >= 0 ? 1 : -1
-        };
-
         camera->position.x += vel.x;
-        if(!free_cam) {
-            if(
-                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.5f, ceilf(camera->position.z + size_w)) || 
-                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.5f, ceilf(camera->position.z - size_w)) ||
-                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.0f, ceilf(camera->position.z + size_w)) || 
-                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y - 1.0f, ceilf(camera->position.z - size_w)) ||
-                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y, ceilf(camera->position.z + size_w)) || 
-                world_get_block(world, camera->position.x + size_w * dir.x, camera->position.y, ceilf(camera->position.z - size_w))
-            ) {
-                camera->position.x -= vel.x;
-            }
-        }
-
-        camera->position.z += vel.z;
-        if(!free_cam) {
-            if(
-                world_get_block(world, camera->position.x + size_w, camera->position.y - 1.5f, ceilf(camera->position.z + size_w * dir.z)) || 
-                world_get_block(world, camera->position.x - size_w, camera->position.y - 1.5f, ceilf(camera->position.z + size_w * dir.z)) ||
-                world_get_block(world, camera->position.x + size_w, camera->position.y - 1.0f, ceilf(camera->position.z + size_w * dir.z)) || 
-                world_get_block(world, camera->position.x - size_w, camera->position.y - 1.0f, ceilf(camera->position.z + size_w * dir.z)) ||
-                world_get_block(world, camera->position.x + size_w, camera->position.y, ceilf(camera->position.z + size_w * dir.z)) || 
-                world_get_block(world, camera->position.x - size_w, camera->position.y, ceilf(camera->position.z + size_w * dir.z))
-            ) {
-                camera->position.z -= vel.z;
-            }
-        }
-
         camera->position.y += vel.y;
-        if(!free_cam) { // y check
-            vec3i check = {
-                .y = camera->position.y - 1.5f
-            };
-            bool_e fall = TRUE;
-
-            if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z + size_w))) {
-                fall = FALSE;
-            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z + size_w))) {
-                fall = FALSE;
-            } else if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z - size_w))) {
-                fall = FALSE;
-            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z - size_w))) {
-                fall = FALSE;
-            }
-
-            if(!fall) {
-                camera->position.y = floorf(camera->position.y) + 0.5f;
-                vel.y = 0;
-            }
-
-            check.y = camera->position.y + 0.3f;
-
-            if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z + size_w))) {
-                camera->position.y -= vel.y;
-                vel.y = 0;
-            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z + size_w))) {
-                camera->position.y -= vel.y;
-                vel.y = 0;
-            } else if(world_get_block(world, floorf(camera->position.x + size_w), check.y, ceilf(camera->position.z - size_w))) {
-                camera->position.y -= vel.y;
-                vel.y = 0;
-            } else if(world_get_block(world, floorf(camera->position.x - size_w), check.y, ceilf(camera->position.z - size_w))) {
-                camera->position.y -= vel.y;
-                vel.y = 0;
-            }
-        }
-
-        if(move != 0 || move_h != 0) {
-            world_sort_chunks(world, &camera->position);
-        }
+        camera->position.z += vel.z;
 
         camera_update(camera);
         get_block_with_ray(world, &camera->position, &camera->facing, &ray);
@@ -452,16 +338,8 @@ int main() {
         world_render(world, shader);
 
         if(ray.valid) {
-            model.m[3] = (int)ray.coord.x;
-            model.m[7] = (int)ray.coord.y;
-            model.m[11] = (int)ray.coord.z;
-
-            shader_uniform(shader, "model", UNIFORM_MATRIX_4, 1, model.m);
-
-            vao_bind(&highlight_vao);
-            vbo_bind(&highlight_vbo);
-            vbo_bind(&highlight_vio);
-            glDrawElements(GL_LINES, sizeof(HIGH_INDICES), GL_UNSIGNED_INT, (void*)0);
+            highlight->position = VEC3I2F(ray.coord);
+            highlight_render(highlight, shader);
         }
 
         // render UI
@@ -497,9 +375,7 @@ int main() {
 
     sprite_destroy(s_cursor);
 
-    vbo_destroy(&highlight_vbo);
-    vbo_destroy(&highlight_vio);
-    vao_destroy(&highlight_vao);
+    highlight_destroy(highlight);
 
     camera_destroy(camera);
 

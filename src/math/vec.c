@@ -23,14 +23,14 @@ vec3f vec3f_normalize(vec3f v) {
     else return (vec3f) { v.x / m, v.y / m, v.z / m };
 }
 
-vec3f vec3f_cross(vec3f v0, vec3f v1) {
+vec3f vec3f_cross(vec3f self, vec3f other) {
     return (vec3f) { 
-        v0.y * v1.z - v0.z * v1.y, 
-        v0.z * v1.x - v0.x * v1.z, 
-        v0.x * v1.y - v0.y * v1.x 
+        self.y * other.z - self.z * other.y, 
+        self.z * other.x - self.x * other.z, 
+        self.x * other.y - self.y * other.x 
     };
 }
 
-float vec3f_dot(vec3f v0, vec3f v1) {
-    return v0.x * v1.x + v0.y * v1.y;
+float vec3f_dot(vec3f self, vec3f other) {
+    return self.x * other.x + self.y * other.y;
 }
