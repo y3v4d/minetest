@@ -103,13 +103,9 @@ int main() {
     if(!ui_camera) return 1;
 
     const float SPEED = 0.1f;
-    const float ROTATION_SPEED = 0.001f;
 
     vec2f mouse_pos = { 0, 0 };
     vec2f mouse_prev_pos = { 0, 0 };
-
-    int move = 0;
-    int move_h = 0;
 
     const GLubyte *version = glGetString(GL_VERSION);
     printf("OpenGL version: %s\n", version);
