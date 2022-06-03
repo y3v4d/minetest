@@ -47,11 +47,13 @@ typedef struct {
 } vec4f;
 
 void vec2f_add(vec2f *self, vec2f other);
+void vec2f_sub(vec2f *self, vec2f other);
 
 float vec2f_magnitude(vec2f v);
 vec2f vec2f_normalize(vec2f v);
 
 void vec3f_add(vec3f *self, vec3f other);
+void vec3f_sub(vec3f *self, vec3f other);
 
 float vec3f_magnitude(vec3f v);
 vec3f vec3f_normalize(vec3f v);

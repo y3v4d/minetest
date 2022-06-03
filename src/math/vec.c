@@ -6,6 +6,11 @@ void vec2f_add(vec2f *self, vec2f other) {
     self->y += other.y;
 }
 
+void vec2f_sub(vec2f *self, vec2f other) {
+    self->x -= other.x;
+    self->y -= other.y;
+}
+
 float vec2f_magnitude(vec2f v) {
     return sqrtf(v.x * v.x + v.y * v.y);
 }
@@ -21,6 +26,12 @@ void vec3f_add(vec3f *self, vec3f other) {
     self->x += other.x;
     self->y += other.y;
     self->z += other.z;
+}
+
+void vec3f_sub(vec3f *self, vec3f other) {
+    self->x -= other.x;
+    self->y -= other.y;
+    self->z -= other.z;
 }
 
 float vec3f_magnitude(vec3f v) {

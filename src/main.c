@@ -4,7 +4,6 @@
 #include <string.h>
 #include <math.h>
 
-
 #include <GL/glew.h>
 #include <GL/glx.h>
 
@@ -70,7 +69,6 @@ int main() {
     if(!camera) return 1;
 
     camera->offset = F2VEC3F(0.f, 0.f, 1.f);
-    camera->position = F2VEC3F(0.f, 7.5f, 0.f);
 
     highlight_t *highlight = highlight_create();
     if(!highlight) return 1;
@@ -107,16 +105,8 @@ int main() {
     const float SPEED = 0.1f;
     const float ROTATION_SPEED = 0.001f;
 
-    vec3f vel = { 0.f, 0.f, 0.f };
-
-    float m_x = 0.0f;
-    float m_y = 0.0f;
-
-    float pm_x = -1.0f;
-    float pm_y = -1.0f;
-
-    float dm_x = 0.0f;
-    float dm_y = 0.0f;
+    vec2f mouse_pos = { 0, 0 };
+    vec2f mouse_prev_pos = { 0, 0 };
 
     int move = 0;
     int move_h = 0;
@@ -143,7 +133,6 @@ int main() {
 
     bool_e lock_mouse = TRUE;
 
-    bool_e test = TRUE;
     bool_e free_cam = FALSE;
 
     // event loop
@@ -153,8 +142,6 @@ int main() {
         while(g_pending_events()) {
             g_get_event(&event);
 
-            dm_x = 0.0f;
-
             if(event.type == EVENT_KEY_PRESS) {
                 char key = event.eventkey.key;
 
@@ -163,11 +150,6 @@ int main() {
 
                     if(id > BLOCK_MAX_ID) break;
                     else {
-                        char s[32];
-                        snprintf(s, 32, "Block: %s", block_name_from_id(id));
-
-                        text_set(block_text, s);
-
                         current_block = id;
                         break;
                     }
@@ -183,7 +165,6 @@ int main() {
                         text_set(mode, (free_cam ? "Mode: FREE CAM" : "Mode: DEFAULT"));
 
                         break;
-                    case 't': test = (test ? FALSE : TRUE); break;
                     case 'q': done = 1; break;
                     case 'g': lock_mouse = !lock_mouse; break;
                     case 'r':
@@ -191,15 +172,15 @@ int main() {
                         shader = make_shader("data/shaders/main");
                         break;
                     case 'w':
-                        move = 1;
+                        world->player->moving.forward = SPEED;
                         break;
                     case 's':
-                        move = -1;
+                        world->player->moving.forward = -SPEED;
                         break;
-                    case 'a': move_h = -1; break;
-                    case 'd': move_h = 1; break;
+                    case 'a': world->player->moving.right = -SPEED; break;
+                    case 'd': world->player->moving.right = SPEED; break;
                     case ' ':
-                        //if(!free_cam) vel.y = 0.2f;
+                        if(!free_cam) world->player->moving.up = 0.2f;
                         break;
                     default: break;
                 }
@@ -207,9 +188,9 @@ int main() {
                 char key = event.eventkey.key;
 
                 if(key == 'w' || key == 's') {
-                    move = 0;
+                    world->player->moving.forward = 0;
                 } else if(key == 'a' || key == 'd') {
-                    move_h = 0;
+                    world->player->moving.right = 0;
                 }
             } else if(event.type == EVENT_WINDOW_CLOSE) {
                 printf("WM_DELETE_WINDOW invoked\n");
@@ -231,8 +212,7 @@ int main() {
                 window_width = event.window.width;
                 window_height = event.window.height;
             } else if(event.type == EVENT_MOUSE_MOVE) {
-                m_x = event.eventmouse.x;
-                m_y = event.eventmouse.y;
+                mouse_pos = F2VEC2F(event.eventmouse.x, event.eventmouse.y);
             } else if(event.type == EVENT_MOUSE_PRESSED) {
                 if(event.eventmouse.button == MOUSE_BUTTON_1) {
                     if(ray.valid) {
@@ -252,50 +232,27 @@ int main() {
         stoper_start(&dt_stoper);
 
         // handle rotation with mouse movement
-        dm_x = m_x - pm_x;
-        dm_y = m_y - pm_y;
+        vec2f_sub(&mouse_pos, mouse_prev_pos); // mouse_pos now contains delta
 
-        camera->rotation.x += (-dm_y) / 5.f;
-        camera->rotation.y += (-dm_x) / 5.f;
+        world->player->rotation.x += (-mouse_pos.y) / 5.f;
+        world->player->rotation.y += (-mouse_pos.x) / 5.f;
+
+        world->player->moving.up -= (free_cam ? 0 : 0.01f); // gravity
+        if(world->player->moving.up < -0.2f) world->player->moving.up = -0.2f;
+
+        world_tick(world);
+
+        camera->position = world->player->position;
+        camera->rotation = world->player->rotation;
         camera_update(camera);
 
-        vel.x = 0;
-        if(free_cam) vel.y = 0;
-        vel.z = 0;
-
-        // set 3d velocity
-        if(move != 0) {
-            // Negative sin and cos where Y rotation
-            // because the camera is looking at -z by default
-            // (Y rotation responsible for the horizontal and depth movement)
-            vel.x += -sinf(RADIANS(camera->rotation.y)) * move;
-            if(free_cam) vel.y = camera->facing.y * SPEED * move;
-            vel.z += -cosf(RADIANS(camera->rotation.y)) * move;
-        }
-
-        if(move_h != 0) {
-            vel.x += cosf(RADIANS(camera->rotation.y)) * move_h;
-            vel.z += -sinf(RADIANS(camera->rotation.y)) * move_h;
-        }
-
-        //vel.y -= (free_cam ? 0 : 0.01f); // gravity
-        //if(vel.y < -0.2f) vel.y = -0.2f;
-
-        {
-            vec2f n = vec2f_normalize(F2VEC2F(vel.x, vel.z));
-            vel.x = n.x * SPEED;
-            vel.z = n.y * SPEED;
-        }
-
-        vec3f_add(&camera->position, vel);
-
-        camera_update(camera);
-        get_block_with_ray(world, camera->position, camera->facing, &ray);
+        get_block_with_ray(world, world->player->position, camera->facing, &ray);
 
         if(lock_mouse) {
             g_lock_mouse();
-            pm_x = 320; pm_y = 240;
-            m_x = 320; m_y = 240;
+
+            mouse_pos = F2VEC2F(320, 240);
+            mouse_prev_pos = F2VEC2F(320, 240);
         }
 
         {
@@ -326,6 +283,13 @@ int main() {
             text_set(looking, buff);
         } else {
             text_set(looking, "Looking at - - -");
+        }
+
+        {
+            char s[32];
+            snprintf(s, 32, "Block: %s", block_name_from_id(current_block));
+
+            text_set(block_text, s);
         }
         
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);

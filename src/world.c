@@ -1,5 +1,8 @@
 #include "world.h"
+#include "camera.h"
 #include "chunk.h"
+#include "math/vec.h"
+#include "player.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -57,12 +60,19 @@ world_t* world_init() {
         }
     }
 
+    t->player = player_init(t, F2VEC3F(0, 7.5f, 0), F2VEC3F(0, 0, 0));
+    if(!t->player) {
+        world_destroy(t);
+        return NULL;
+    }
+
     return t;
 }
 
 void world_destroy(world_t *p) {
     if(!p) return;
 
+    if(p->player) player_destroy(p->player);
     for(int i = 0; i < CHUNK_X * CHUNK_Z; ++i) {
         if(p->chunks[i]) chunk_destroy(p->chunks[i]);
     }
@@ -97,6 +107,10 @@ void world_set_block(const world_t *w, int x, int y, int z, uint8_t type) {
 
     chunk_set_block(c, in_x, y, in_z, type);
     prepare_chunk(c);
+}
+
+void world_tick(world_t *w) {
+    player_tick(w->player);
 }
 
 void world_render(world_t *w, shader_t *s) {

@@ -43,9 +43,6 @@ void camera_destroy(camera_t *c) {
 }
 
 void camera_update(camera_t *c) {
-    if(c->rotation.x > 90.f) c->rotation.x = 90.f;
-    else if(c->rotation.x < -90.f) c->rotation.x = -90.f;
-    
     c->facing = F2VEC3F(
         -sinf(RADIANS(c->rotation.y)) * cosf(RADIANS(c->rotation.x)),
         sinf(RADIANS(c->rotation.x)),
