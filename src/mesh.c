@@ -52,10 +52,14 @@ void mesh_prepare(mesh_t *m) {
 }
 
 void mesh_finalize(mesh_t *m) {
+    vao_bind(&m->vao);
+
     vbo_bind(&m->vbo);
     vbo_data(&m->vbo, m->vertex_counter * sizeof(float), m->vertices->data);
     vbo_bind(&m->vio);
     vbo_data(&m->vio, m->indices->index * sizeof(GLuint), m->indices->data);
+    
+    vao_bind(NULL);
 }
 
 mesh_buffer_t* mesh_buffer_init(size_t size, size_t bytes_per_data) {

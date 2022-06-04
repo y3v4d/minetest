@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+float absf(float x) {
+    return (x < 0 ? -x : x);
+}
+
 player_t* player_init(world_t *world, vec3f position, vec3f rotation) {
     player_t *temp = (player_t*)malloc(sizeof(player_t));
     if(!temp) {
@@ -58,7 +62,7 @@ void player_tick(player_t *p) {
     }
 
     {
-        const float SPEED = (p->moving.forward != 0 ? p->moving.forward : p->moving.right);//sqrtf(p->moving.forward * p->moving.forward + p->moving.right * p->moving.right);
+        const float SPEED = (p->moving.forward != 0 ? absf(p->moving.forward) : absf(p->moving.right));//sqrtf(p->moving.forward * p->moving.forward + p->moving.right * p->moving.right);
         
         vec2f n = vec2f_normalize(F2VEC2F(v.x, v.z));
         v.x = n.x * SPEED;

@@ -7,11 +7,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <GL/glew.h>
 #include <GL/glx.h>
-
-#define MAX_TEXT_LENGTH 32
 
 const unsigned TEXT_INDICES[] = {
     0, 1, 2,
@@ -38,7 +37,8 @@ text_t* text_make(fontbmp_t *font, const char *string, vec3f position) {
     
     vao_bind(NULL);
 
-    text_set(temp, string);
+    strncpy(temp->text, string, MAX_TEXT_LENGTH);
+    text_update(temp, TEXT_UPDATE_ALL);
 
     temp->position = position;
     temp->model = mat4_translation(position);
@@ -113,22 +113,19 @@ void emit_character(text_t *p, char c, int *x, int *y) {
     *x += found->xadv;
 }
 
-void text_set(text_t *p, const char *string) {
-    p->text = string;
-
-    mesh_prepare(p->mesh);
-
-    int x = 0, y = 0;
-    for(int i = 0; string[i] != 0; ++i) {
-        emit_character(p, string[i], &x, &y);
-    }
-
-    mesh_finalize(p->mesh);
-}
-
 void text_update(text_t *p, uint32_t flag) {
     if(flag & TEXT_UPDATE_POSITION) {
         mat4_translate(&p->model, p->position);
+    }
+    if(flag & TEXT_UPDATE_STRING) {
+        mesh_prepare(p->mesh);
+
+        int x = 0, y = 0;
+        for(int i = 0; p->text[i] != 0 && i < MAX_TEXT_LENGTH; ++i) {
+            emit_character(p, p->text[i], &x, &y);
+        }
+
+        mesh_finalize(p->mesh);
     }
 }
 

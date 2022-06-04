@@ -147,6 +147,9 @@ int main() {
                     if(id > BLOCK_MAX_ID) break;
                     else {
                         current_block = id;
+
+                        snprintf(block_text->text, 32, "Block: %s", block_name_from_id(id));
+                        text_update(block_text, TEXT_UPDATE_STRING);
                         break;
                     }
                 }
@@ -154,12 +157,15 @@ int main() {
                 switch(key) {
                     case 'v':
                         camera->mode = (camera->mode == CAMERA_MODE_LINE ? CAMERA_MODE_FILL : CAMERA_MODE_LINE);
-                        text_set(camera_mode, (camera->mode == CAMERA_MODE_LINE ? "Camera Mode: LINE" : "Camera Mode: FILL"));
+
+                        snprintf(camera_mode->text, 32, (camera->mode == CAMERA_MODE_LINE ? "Camera Mode: LINE" : "Camera Mode: FILL"));
+                        text_update(camera_mode, TEXT_UPDATE_STRING);
                         break;
                     case 'f': 
                         free_cam = !free_cam;
-                        text_set(mode, (free_cam ? "Mode: FREE CAM" : "Mode: DEFAULT"));
 
+                        snprintf(mode->text, 32, (free_cam ? "Mode: FREE CAM" : "Mode: DEFAULT"));
+                        text_update(mode, TEXT_UPDATE_STRING);
                         break;
                     case 'q': done = 1; break;
                     case 'g': lock_mouse = !lock_mouse; break;
@@ -251,41 +257,21 @@ int main() {
             mouse_prev_pos = F2VEC2F(320, 240);
         }
 
-        {
-            char buff[64];
+        snprintf(pos_text->text, 32, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
+        text_update(pos_text, TEXT_UPDATE_STRING);
 
-            snprintf(buff, 64, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
-            text_set(pos_text, buff);
-        }
+        snprintf(rot_text->text, 32, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
+        text_update(rot_text, TEXT_UPDATE_STRING);
 
-        {
-            char buff[64];
-
-            snprintf(buff, 64, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
-            text_set(rot_text, buff);
-        }
-
-        {
-            char buff[64];
-
-            snprintf(buff, 64, "FPS: %.2f", 1000.f / dt_stoper.delta);
-            text_set(title, buff);
-        }
+        snprintf(title->text, 32, "FPS: %.2f", 1000.f / dt_stoper.delta);
+        text_update(title, TEXT_UPDATE_STRING);
 
         if(ray.valid) {
-            char buff[64];
-
-            snprintf(buff, 64, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
-            text_set(looking, buff);
+            snprintf(looking->text, 32, "Looking at %d %d %d", ray.coord.x, ray.coord.y, ray.coord.z);
+            text_update(looking, TEXT_UPDATE_STRING);
         } else {
-            text_set(looking, "Looking at - - -");
-        }
-
-        {
-            char s[32];
-            snprintf(s, 32, "Block: %s", block_name_from_id(current_block));
-
-            text_set(block_text, s);
+            snprintf(looking->text, 32, "Looking at - - -");
+            text_update(looking, TEXT_UPDATE_STRING);
         }
         
         glClearColor(0.6f, 0.6f, 0.6f, 1.0f);
