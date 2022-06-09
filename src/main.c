@@ -65,11 +65,6 @@ int main() {
     texture_t *dot_tex = texture_make("data/textures/dot.bmp");
     if(!dot_tex) return 1;
 
-    camera_t *camera = camera_init(CAMERA_PROJECTION_PERSPECTIVE, (float)window_width / window_height, FOV);
-    if(!camera) return 1;
-
-    camera->offset = F2VEC3F(0.f, 0.f, 1.f);
-
     highlight_t *highlight = highlight_create();
     if(!highlight) return 1;
 
@@ -101,6 +96,11 @@ int main() {
 
     camera_t *ui_camera = camera_init(CAMERA_PROJECTION_ORTHOGRAPHIC, 0.f, 0.f);
     if(!ui_camera) return 1;
+
+    camera_t *camera = camera_init(CAMERA_PROJECTION_PERSPECTIVE, (float)window_width / window_height, FOV);
+    if(!camera) return 1;
+
+    camera->offset = F2VEC3F(0.f, 0.f, 1.f);
 
     const float SPEED = 0.1f;
 

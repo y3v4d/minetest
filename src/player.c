@@ -78,24 +78,24 @@ void player_tick(player_t *p) {
 
     p->position.x += v.x;
     if(
-        world_get_block(p->world, p->position.x + size_w * dir.x, p->position.y - 1.5f, ceilf(p->position.z + size_w)) || 
-        world_get_block(p->world, p->position.x + size_w * dir.x, p->position.y - 1.5f, ceilf(p->position.z - size_w)) ||
-        world_get_block(p->world, p->position.x + size_w * dir.x, p->position.y - 1.0f, ceilf(p->position.z + size_w)) || 
-        world_get_block(p->world, p->position.x + size_w * dir.x, p->position.y - 1.0f, ceilf(p->position.z - size_w)) ||
-        world_get_block(p->world, p->position.x + size_w * dir.x, p->position.y, ceilf(p->position.z + size_w)) || 
-        world_get_block(p->world, p->position.x + size_w * dir.x, p->position.y, ceilf(p->position.z - size_w))
+        world_get_block(p->world, floorf(p->position.x + size_w * dir.x), p->position.y - 1.5f, ceilf(p->position.z + size_w)) || 
+        world_get_block(p->world, floorf(p->position.x + size_w * dir.x), p->position.y - 1.5f, ceilf(p->position.z - size_w)) ||
+        world_get_block(p->world, floorf(p->position.x + size_w * dir.x), p->position.y - 1.0f, ceilf(p->position.z + size_w)) || 
+        world_get_block(p->world, floorf(p->position.x + size_w * dir.x), p->position.y - 1.0f, ceilf(p->position.z - size_w)) ||
+        world_get_block(p->world, floorf(p->position.x + size_w * dir.x), p->position.y, ceilf(p->position.z + size_w)) || 
+        world_get_block(p->world, floorf(p->position.x + size_w * dir.x), p->position.y, ceilf(p->position.z - size_w))
     ) {
         p->position.x -= v.x;
     }
 
     p->position.z += v.z;
     if(
-        world_get_block(p->world, p->position.x + size_w, p->position.y - 1.5f, ceilf(p->position.z + size_w * dir.z)) || 
-        world_get_block(p->world, p->position.x - size_w, p->position.y - 1.5f, ceilf(p->position.z + size_w * dir.z)) ||
-        world_get_block(p->world, p->position.x + size_w, p->position.y - 1.0f, ceilf(p->position.z + size_w * dir.z)) || 
-        world_get_block(p->world, p->position.x - size_w, p->position.y - 1.0f, ceilf(p->position.z + size_w * dir.z)) ||
-        world_get_block(p->world, p->position.x + size_w, p->position.y, ceilf(p->position.z + size_w * dir.z)) || 
-        world_get_block(p->world, p->position.x - size_w, p->position.y, ceilf(p->position.z + size_w * dir.z))
+        world_get_block(p->world, floorf(p->position.x + size_w), p->position.y - 1.5f, ceilf(p->position.z + size_w * dir.z)) || 
+        world_get_block(p->world, floorf(p->position.x - size_w), p->position.y - 1.5f, ceilf(p->position.z + size_w * dir.z)) ||
+        world_get_block(p->world, floorf(p->position.x + size_w), p->position.y - 1.0f, ceilf(p->position.z + size_w * dir.z)) || 
+        world_get_block(p->world, floorf(p->position.x - size_w), p->position.y - 1.0f, ceilf(p->position.z + size_w * dir.z)) ||
+        world_get_block(p->world, floorf(p->position.x + size_w), p->position.y, ceilf(p->position.z + size_w * dir.z)) || 
+        world_get_block(p->world, floorf(p->position.x - size_w), p->position.y, ceilf(p->position.z + size_w * dir.z))
     ) {
         p->position.z -= v.z;
     }
