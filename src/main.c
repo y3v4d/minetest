@@ -245,10 +245,11 @@ int main() {
         world_tick(world);
 
         camera->position = world->player->position;
+        camera->position.y += 1.5f;
         camera->rotation = world->player->rotation;
         camera_update(camera);
 
-        get_block_with_ray(world, world->player->position, camera->facing, &ray);
+        get_block_with_ray(world, camera->position, camera->facing, &ray);
 
         if(lock_mouse) {
             g_lock_mouse();
@@ -257,10 +258,10 @@ int main() {
             mouse_prev_pos = F2VEC2F(320, 240);
         }
 
-        snprintf(pos_text->text, 32, "Pos %.2f %.2f %.2f", camera->position.x, camera->position.y, camera->position.z);
+        snprintf(pos_text->text, 32, "Pos %.2f %.2f %.2f", world->player->position.x, world->player->position.y, world->player->position.z);
         text_update(pos_text, TEXT_UPDATE_STRING);
 
-        snprintf(rot_text->text, 32, "Rot %.2f %.2f", camera->rotation.x, camera->rotation.y);
+        snprintf(rot_text->text, 32, "Rot %.2f %.2f", world->player->rotation.x, world->player->rotation.y);
         text_update(rot_text, TEXT_UPDATE_STRING);
 
         snprintf(title->text, 32, "FPS: %.2f", 1000.f / dt_stoper.delta);

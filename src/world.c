@@ -60,7 +60,7 @@ world_t* world_init() {
         }
     }
 
-    t->player = player_init(t, F2VEC3F(0, 7.5f, 0), F2VEC3F(0, 0, 0));
+    t->player = player_init(t, F2VEC3F(0, 6.0f, 0), F2VEC3F(0, 0, 0));
     if(!t->player) {
         world_destroy(t);
         return NULL;
