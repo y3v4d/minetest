@@ -40,6 +40,9 @@ void player_tick(player_t *p) {
     if(p->rotation.x > 90.f) p->rotation.x = 90.f;
     else if(p->rotation.x < -90.f) p->rotation.x = -90.f;
 
+    if(p->rotation.y > 360.f) p->rotation.y -= 360.f;
+    else if(p->rotation.y < 0.f) p->rotation.y += 360.f;
+
     p->facing = F2VEC3F(
         -sinf(RADIANS(p->rotation.y)) * cosf(RADIANS(p->rotation.x)),
         sinf(RADIANS(p->rotation.x)),
