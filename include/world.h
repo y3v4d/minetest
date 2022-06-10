@@ -6,6 +6,7 @@
 #include "chunk.h"
 
 #include "player.h"
+#include "highlight.h"
 
 #define CHUNK_X 2
 #define CHUNK_Z 2
@@ -14,6 +15,7 @@ typedef struct _world_s {
     chunk_t *chunks[CHUNK_X * CHUNK_Z];
 
     player_t *player;
+    highlight_t *highlight;
 } world_t;
 
 world_t* world_init();

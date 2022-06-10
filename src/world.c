@@ -66,11 +66,15 @@ world_t* world_init() {
         return NULL;
     }
 
+    t->highlight = highlight_create();
+
     return t;
 }
 
 void world_destroy(world_t *p) {
     if(!p) return;
+
+    if(p->highlight) highlight_destroy(p->highlight);
 
     if(p->player) player_destroy(p->player);
     for(int i = 0; i < CHUNK_X * CHUNK_Z; ++i) {
@@ -114,10 +118,17 @@ void world_tick(world_t *w) {
 }
 
 void world_render(world_t *w, shader_t *s) {
+    camera_use(w->player->camera, s);
+
     for(int z = 0; z < CHUNK_Z; ++z) {
         for(int x = 0; x < CHUNK_X; ++x) {
             chunk_render(w->chunks[z * CHUNK_X + x], s);
         }
+    }
+
+    if(w->player->ray.valid) {
+        w->highlight->position = VEC3I2F(w->player->ray.coord);
+        highlight_render(w->highlight, s);
     }
 }
 

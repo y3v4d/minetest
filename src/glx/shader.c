@@ -57,7 +57,7 @@ GLint check_compilation(GLuint shader) {
     return success;
 }
 
-shader_t* make_shader(const char *path) {
+shader_t* shader_init(const char *path) {
     shader_t *shader = (shader_t*)malloc(sizeof(shader_t));
 
     int path_size = strlen(path);
@@ -69,7 +69,7 @@ shader_t* make_shader(const char *path) {
     real_path[path_size + 5] = 0;
     char *buffer = load_file(real_path);
     if(!buffer) {
-        close_shader(shader);
+        shader_destroy(shader);
         free(real_path);
 
         return NULL;
@@ -83,7 +83,7 @@ shader_t* make_shader(const char *path) {
 
     if(!check_compilation(shader->vertex)) {
         free(real_path);
-        close_shader(shader);
+        shader_destroy(shader);
 
         return NULL;
     }
@@ -92,7 +92,7 @@ shader_t* make_shader(const char *path) {
     strncpy(real_path + path_size, ".frag", 5);
     buffer = load_file(real_path);
     if(!buffer) {
-        close_shader(shader);
+        shader_destroy(shader);
         free(real_path);
 
         return NULL;
@@ -106,7 +106,7 @@ shader_t* make_shader(const char *path) {
     free(real_path);
 
     if(!check_compilation(shader->fragment)) {
-        close_shader(shader);
+        shader_destroy(shader);
 
         return NULL;
     }
@@ -130,7 +130,7 @@ void shader_uniform(const shader_t *shader, const char *name, uniform_type_e t, 
     }
 }
 
-void close_shader(shader_t *shader) {
+void shader_destroy(shader_t *shader) {
     if(shader == NULL) return;
 
     glDeleteShader(shader->vertex);

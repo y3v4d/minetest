@@ -1,4 +1,5 @@
 #include "ray.h"
+#include "world.h"
 
 #include <math.h>
 

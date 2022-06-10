@@ -1,6 +1,10 @@
 #include "player.h"
 #include "world.h"
 
+#include "state.h"
+
+#include "block.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -21,6 +25,14 @@ player_t* player_init(world_t *world, vec3f position, vec3f rotation) {
 
     temp->facing = F2VEC3F(0, 0, -1);
 
+    temp->camera = camera_init(
+            CAMERA_PROJECTION_PERSPECTIVE,
+            (float)state.window_width / state.window_height,
+            60.f
+    );
+
+    temp->current_block = BLOCK_GRASS;
+
     temp->moving.forward = 0;
     temp->moving.right = 0;
     temp->moving.up = 0;
@@ -32,6 +44,8 @@ player_t* player_init(world_t *world, vec3f position, vec3f rotation) {
 
 void player_destroy(player_t *p) {
     if(!p) return;
+
+    camera_destroy(p->camera);
 
     free(p);
 }
@@ -139,4 +153,12 @@ void player_tick(player_t *p) {
         p->position.y -= v.y;
         p->moving.up = 0;
     }
+
+    p->camera->position = p->position;
+    p->camera->position.y += 1.5f;
+    p->camera->rotation = p->rotation;
+
+    camera_update(p->camera);
+
+    get_block_with_ray(p->world, p->camera->position, p->camera->facing, &p->ray);
 }

@@ -2,9 +2,9 @@
 #define __RAY_H__
 
 #include "math/vec.h"
-#include "world.h"
 #include "direction.h"
 
+typedef struct _world_s world_t;
 typedef struct {
     vec3i coord;
     direction_e face;

@@ -5,6 +5,8 @@
 #include "math/vec.h"
 #include "utils/types.h"
 
+#include "ray.h"
+
 typedef struct _world_s world_t;
 
 typedef struct {
@@ -14,6 +16,11 @@ typedef struct {
     vec3f rotation;
 
     vec3f facing;
+
+    camera_t *camera;
+    raydata_t ray;
+
+    uint8_t current_block;
 
     struct {
         float forward, right, up;
