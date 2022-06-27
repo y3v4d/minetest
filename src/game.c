@@ -67,6 +67,8 @@ int game_init() {
 
     if(!(debugmenu = debugmenu_init(g_font))) goto init_error;
 
+    g_spr_cursor->texture = g_tex_dot;
+
     // setup opengl
     // blending
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

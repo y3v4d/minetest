@@ -31,6 +31,8 @@ player_t* player_init(world_t *world, vec3f position, vec3f rotation) {
             60.f
     );
 
+    temp->camera->offset = F2VEC3F(0, 0, 1);
+
     temp->current_block = BLOCK_GRASS;
 
     temp->moving.forward = 0;
