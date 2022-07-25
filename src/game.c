@@ -142,15 +142,15 @@ void game_on_key_press(eventkey_t *event) {
             state.shader_main = shader_init("data/shaders/main");
             break;
         case 'w':
-            p->moving.forward = 0.1f;
+            p->velocity.z = 1.f;
             break;
         case 's':
-            p->moving.forward = -0.1f;
+            p->velocity.z = -1.f;
             break;
-        case 'a': p->moving.right = -0.1f; break;
-        case 'd': p->moving.right = 0.1f; break;
+        case 'a': p->velocity.x = -1.f; break;
+        case 'd': p->velocity.x = 1.f; break;
         case ' ':
-            if(!g_free_cam) p->moving.up = 0.2f;
+            if(!g_free_cam) p->velocity.y = 0.2f;
             break;
         default: break;
     }
@@ -160,9 +160,9 @@ void game_on_key_release(eventkey_t *event) {
     char key = event->key;
 
     if(key == 'w' || key == 's') {
-        state.world->player->moving.forward = 0;
+        state.world->player->velocity.z = 0;
     } else if(key == 'a' || key == 'd') {
-        state.world->player->moving.right = 0;
+        state.world->player->velocity.x = 0;
     }
 }
 

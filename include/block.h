@@ -33,16 +33,16 @@ extern block_t BLOCKS[BLOCK_MAX_ID + 1];
 
 static inline char* block_name_from_id(uint8_t ID) {
     switch(ID) {
-        case BLOCK_AIR: return "Air";
-        case BLOCK_GRASS: return "Grass";
-        case BLOCK_DIRT: return "Dirt";
-        case BLOCK_STONE: return "Stone";
-        case BLOCK_COBBLE: return "Cobble";
-        case BLOCK_PLANK: return "Plank";
-        case BLOCK_GRANIT: return "Granit";
-        case BLOCK_GLASS: return "Glass";
-        case BLOCK_WOOD: return "Wood";
-        default: return "Undefined";
+        case BLOCK_AIR:     return "Air";
+        case BLOCK_GRASS:   return "Grass";
+        case BLOCK_DIRT:    return "Dirt";
+        case BLOCK_STONE:   return "Stone";
+        case BLOCK_COBBLE:  return "Cobble";
+        case BLOCK_PLANK:   return "Plank";
+        case BLOCK_GRANIT:  return "Granit";
+        case BLOCK_GLASS:   return "Glass";
+        case BLOCK_WOOD:    return "Wood";
+        default:            return "Undefined";
     }
 }
 

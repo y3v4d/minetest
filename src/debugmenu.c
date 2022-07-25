@@ -1,6 +1,6 @@
 #include "debugmenu.h"
 
-#include "math/vec.h"
+#include "utils/vec.h"
 #include "state.h"
 
 #include <stdlib.h>

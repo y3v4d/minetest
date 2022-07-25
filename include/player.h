@@ -2,18 +2,19 @@
 #define __PLAYER_H__
 
 #include "camera.h"
-#include "math/vec.h"
+#include "utils/vec.h"
 #include "utils/types.h"
 
 #include "ray.h"
 
 typedef struct _world_s world_t;
-
 typedef struct {
     world_t *world;
 
     vec3f position;
     vec3f rotation;
+
+    vec3f velocity;
 
     vec3f facing;
 

@@ -8,7 +8,7 @@
 
 #include "mesh.h"
 
-#include "math/vec.h"
+#include "utils/vec.h"
 
 #define CHUNK_SIZE_X 16
 #define CHUNK_SIZE_Y 16
@@ -29,7 +29,7 @@ typedef struct _chunk_s {
 chunk_t *chunk_init(world_t *world, int x, int z);
 void chunk_destroy(chunk_t *p);
 
-void prepare_chunk(chunk_t *p);
+void chunk_prepare(chunk_t *p);
 void chunk_render(chunk_t *p, shader_t *s);
 
 uint8_t chunk_get_block(const chunk_t *p, int x, int y, int z);

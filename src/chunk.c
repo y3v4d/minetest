@@ -1,7 +1,7 @@
 #include "chunk.h"
 #include "world.h"
 #include "block.h"
-#include "math/matrix.h"
+#include "utils/matrix.h"
 
 #include "direction.h"
 
@@ -172,13 +172,13 @@ void chunk_set_block(chunk_t *p, int x, int y, int z, uint8_t type) {
 
         for(int i = 0; i < 2; ++i) {
             if(n[i] != NULL) {
-                prepare_chunk(n[i]);
+                chunk_prepare(n[i]);
             }
         }
     }
 }
 
-void prepare_chunk(chunk_t *p) {
+void chunk_prepare(chunk_t *p) {
     uint8_t *b = p->data;
 
     mesh_prepare(p->meshes.base);

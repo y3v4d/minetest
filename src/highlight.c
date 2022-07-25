@@ -1,6 +1,6 @@
 #include "highlight.h"
 #include "glx/vbo.h"
-#include "math/matrix.h"
+#include "utils/matrix.h"
 
 #include <stdlib.h>
 #include <stdio.h>

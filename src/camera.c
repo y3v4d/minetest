@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "math/matrix.h"
+#include "utils/matrix.h"
 
 #include <GL/glew.h>
 #include <GL/glx.h>

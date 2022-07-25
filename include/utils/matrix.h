@@ -1,7 +1,7 @@
 #ifndef __MATRIX_H__
 #define __MATRIX_H__
 
-#include "math/vec.h"
+#include "utils/vec.h"
 
 #define PI 3.14159265359
 #define RADIANS(a) (a) * (PI / 180.f)

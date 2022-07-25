@@ -1,0 +1,167 @@
+[
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/main.c.o -c /home/y3v4d/programming/voxelly/src/main.c",
+  "file": "/home/y3v4d/programming/voxelly/src/main.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/sys/system.c.o -c /home/y3v4d/programming/voxelly/src/sys/system.c",
+  "file": "/home/y3v4d/programming/voxelly/src/sys/system.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/glx/atlas.c.o -c /home/y3v4d/programming/voxelly/src/glx/atlas.c",
+  "file": "/home/y3v4d/programming/voxelly/src/glx/atlas.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/glx/texture.c.o -c /home/y3v4d/programming/voxelly/src/glx/texture.c",
+  "file": "/home/y3v4d/programming/voxelly/src/glx/texture.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/glx/vao.c.o -c /home/y3v4d/programming/voxelly/src/glx/vao.c",
+  "file": "/home/y3v4d/programming/voxelly/src/glx/vao.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/glx/vbo.c.o -c /home/y3v4d/programming/voxelly/src/glx/vbo.c",
+  "file": "/home/y3v4d/programming/voxelly/src/glx/vbo.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/glx/shader.c.o -c /home/y3v4d/programming/voxelly/src/glx/shader.c",
+  "file": "/home/y3v4d/programming/voxelly/src/glx/shader.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/utils/stoper.c.o -c /home/y3v4d/programming/voxelly/src/utils/stoper.c",
+  "file": "/home/y3v4d/programming/voxelly/src/utils/stoper.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/utils/font_loader.c.o -c /home/y3v4d/programming/voxelly/src/utils/font_loader.c",
+  "file": "/home/y3v4d/programming/voxelly/src/utils/font_loader.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/utils/img_loader.c.o -c /home/y3v4d/programming/voxelly/src/utils/img_loader.c",
+  "file": "/home/y3v4d/programming/voxelly/src/utils/img_loader.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/utils/vec.c.o -c /home/y3v4d/programming/voxelly/src/utils/vec.c",
+  "file": "/home/y3v4d/programming/voxelly/src/utils/vec.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/utils/matrix.c.o -c /home/y3v4d/programming/voxelly/src/utils/matrix.c",
+  "file": "/home/y3v4d/programming/voxelly/src/utils/matrix.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/debugmenu.c.o -c /home/y3v4d/programming/voxelly/src/debugmenu.c",
+  "file": "/home/y3v4d/programming/voxelly/src/debugmenu.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/game.c.o -c /home/y3v4d/programming/voxelly/src/game.c",
+  "file": "/home/y3v4d/programming/voxelly/src/game.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/player.c.o -c /home/y3v4d/programming/voxelly/src/player.c",
+  "file": "/home/y3v4d/programming/voxelly/src/player.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/highlight.c.o -c /home/y3v4d/programming/voxelly/src/highlight.c",
+  "file": "/home/y3v4d/programming/voxelly/src/highlight.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/sprite.c.o -c /home/y3v4d/programming/voxelly/src/sprite.c",
+  "file": "/home/y3v4d/programming/voxelly/src/sprite.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/camera.c.o -c /home/y3v4d/programming/voxelly/src/camera.c",
+  "file": "/home/y3v4d/programming/voxelly/src/camera.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/direction.c.o -c /home/y3v4d/programming/voxelly/src/direction.c",
+  "file": "/home/y3v4d/programming/voxelly/src/direction.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/block.c.o -c /home/y3v4d/programming/voxelly/src/block.c",
+  "file": "/home/y3v4d/programming/voxelly/src/block.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/ray.c.o -c /home/y3v4d/programming/voxelly/src/ray.c",
+  "file": "/home/y3v4d/programming/voxelly/src/ray.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/text.c.o -c /home/y3v4d/programming/voxelly/src/text.c",
+  "file": "/home/y3v4d/programming/voxelly/src/text.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/chunk.c.o -c /home/y3v4d/programming/voxelly/src/chunk.c",
+  "file": "/home/y3v4d/programming/voxelly/src/chunk.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/world.c.o -c /home/y3v4d/programming/voxelly/src/world.c",
+  "file": "/home/y3v4d/programming/voxelly/src/world.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/mesh.c.o -c /home/y3v4d/programming/voxelly/src/mesh.c",
+  "file": "/home/y3v4d/programming/voxelly/src/mesh.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/wood.c.o -c /home/y3v4d/programming/voxelly/src/blocks/wood.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/wood.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/glass.c.o -c /home/y3v4d/programming/voxelly/src/blocks/glass.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/glass.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/granit.c.o -c /home/y3v4d/programming/voxelly/src/blocks/granit.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/granit.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/plank.c.o -c /home/y3v4d/programming/voxelly/src/blocks/plank.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/plank.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/cobble.c.o -c /home/y3v4d/programming/voxelly/src/blocks/cobble.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/cobble.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/dirt.c.o -c /home/y3v4d/programming/voxelly/src/blocks/dirt.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/dirt.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/grass.c.o -c /home/y3v4d/programming/voxelly/src/blocks/grass.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/grass.c"
+},
+{
+  "directory": "/home/y3v4d/programming/voxelly/build",
+  "command": "/usr/bin/cc  -I/home/y3v4d/programming/voxelly/include  -o CMakeFiles/voxelly.dir/src/blocks/stone.c.o -c /home/y3v4d/programming/voxelly/src/blocks/stone.c",
+  "file": "/home/y3v4d/programming/voxelly/src/blocks/stone.c"
+}
+]

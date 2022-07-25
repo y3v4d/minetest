@@ -1,4 +1,4 @@
-#include "math/vec.h"
+#include "utils/vec.h"
 #include <math.h>
 
 void vec2f_add(vec2f *self, vec2f other) {

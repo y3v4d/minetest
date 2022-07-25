@@ -1,7 +1,7 @@
 #ifndef __DIRECTION_H__
 #define __DIRECTION_H__
 
-#include "math/vec.h"
+#include "utils/vec.h"
 
 typedef enum {
     DIRECTION_FRONT   = 0,

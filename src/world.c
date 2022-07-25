@@ -1,7 +1,7 @@
 #include "world.h"
 #include "camera.h"
 #include "chunk.h"
-#include "math/vec.h"
+#include "utils/vec.h"
 #include "player.h"
 
 #include <math.h>
@@ -56,7 +56,7 @@ world_t* world_init() {
 
     for(int z = 0; z < CHUNK_Z; ++z) {
         for(int x = 0; x < CHUNK_X; ++x) {
-            prepare_chunk(t->chunks[z * CHUNK_X + x]);
+            chunk_prepare(t->chunks[z * CHUNK_X + x]);
         }
     }
 
@@ -110,7 +110,7 @@ void world_set_block(const world_t *w, int x, int y, int z, uint8_t type) {
     if(!c) return;
 
     chunk_set_block(c, in_x, y, in_z, type);
-    prepare_chunk(c);
+    chunk_prepare(c);
 }
 
 void world_tick(world_t *w) {

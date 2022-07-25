@@ -7,4 +7,4 @@ compile:
 	make -C build
 
 run:
-	./build/minetest
+	./build/voxelly

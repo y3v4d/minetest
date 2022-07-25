@@ -135,7 +135,7 @@ void g_init(int width, int height) {
         exit(1);
     }
 
-    XStoreName(display, window, "MineTest - X11 OpenGL 4.x");
+    XStoreName(display, window, "Voxelly - X11 OpenGL 4.x");
 
     // free visual info
     XFree(vi);
@@ -147,8 +147,8 @@ void g_init(int width, int height) {
     // setup WM_CLASS
     XClassHint *class_hint = XAllocClassHint();
 
-    class_hint->res_name = "Minetest";
-    class_hint->res_class = "minetest";
+    class_hint->res_name = "Voxelly";
+    class_hint->res_class = "voxelly";
 
     XSetClassHint(display, window, class_hint);
 

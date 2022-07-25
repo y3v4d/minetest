@@ -1,8 +1,8 @@
 #ifndef __SPRITE_H__
 #define __SPRITE_H__
 
-#include "math/vec.h"
-#include "math/matrix.h"
+#include "utils/vec.h"
+#include "utils/matrix.h"
 
 #include "glx/shader.h"
 #include "glx/texture.h"

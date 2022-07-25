@@ -1,8 +1,8 @@
 #ifndef __HIGHLIGHT_H__
 #define __HIGHLIGHT_H__
 
-#include "math/vec.h"
-#include "math/matrix.h"
+#include "utils/vec.h"
+#include "utils/matrix.h"
 
 #include "glx/vbo.h"
 #include "glx/vao.h"

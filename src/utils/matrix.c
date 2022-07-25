@@ -1,5 +1,5 @@
-#include "math/matrix.h"
-#include "math.h"
+#include "utils/matrix.h"
+#include <math.h>
 #include <string.h>
 
 mat4_t mat4_identity() {

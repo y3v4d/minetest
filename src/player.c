@@ -23,6 +23,8 @@ player_t* player_init(world_t *world, vec3f position, vec3f rotation) {
     temp->position = position;
     temp->rotation = rotation;
 
+    temp->velocity = F2VEC3F(0, 0, 0);
+
     temp->facing = F2VEC3F(0, 0, -1);
 
     temp->camera = camera_init(
@@ -65,28 +67,20 @@ void player_tick(player_t *p) {
         -cosf(RADIANS(p->rotation.y)) * cosf(RADIANS(p->rotation.x))
     );
 
-    vec3f v = F2VEC3F(0, p->moving.up, 0);
-    if(p->moving.forward != 0) {
-        // Negative sin and cos where Y rotation
-        // because the camera is looking at -z by default
-        // (Y rotation responsible for the horizontal and depth movement)
-        v.x += p->moving.forward * -sinf(RADIANS(p->rotation.y));
-        //if(free_cam) world->player->velocity.y = camera->facing.y * SPEED * move;
-        v.z += p->moving.forward * -cosf(RADIANS(p->rotation.y));
-    }
+    // Negative sin and cos where Y rotation
+    // because the camera is looking at -z by default
+    // (Y rotation responsible for the horizontal and depth movement)
+    //if(free_cam) world->player->velocity.y = camera->facing.y * SPEED * move;
+    vec3f v = {
+        p->velocity.z * -sinf(RADIANS(p->rotation.y)) + p->velocity.x * cosf(RADIANS(p->rotation.y)),
+        0.f,
+        p->velocity.z * -cosf(RADIANS(p->rotation.y)) + p->velocity.x * -sinf(RADIANS(p->rotation.y))
+    };
 
-    if(p->moving.right != 0) {
-        v.x += p->moving.right * cosf(RADIANS(p->rotation.y));
-        v.z += p->moving.right * -sinf(RADIANS(p->rotation.y));
-    }
+    v = vec3f_normalize(v);
 
-    {
-        const float SPEED = (p->moving.forward != 0 ? absf(p->moving.forward) : absf(p->moving.right));//sqrtf(p->moving.forward * p->moving.forward + p->moving.right * p->moving.right);
-        
-        vec2f n = vec2f_normalize(F2VEC2F(v.x, v.z));
-        v.x = n.x * SPEED;
-        v.z = n.y * SPEED;
-    }
+    v.x *= 0.1f;
+    v.z *= 0.1f;
 
     const float size_w = 0.3f;
     vec3f dir = {

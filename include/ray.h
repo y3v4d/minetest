@@ -1,7 +1,7 @@
 #ifndef __RAY_H__
 #define __RAY_H__
 
-#include "math/vec.h"
+#include "utils/vec.h"
 #include "direction.h"
 
 typedef struct _world_s world_t;
